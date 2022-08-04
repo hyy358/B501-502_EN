@@ -1,4 +1,4 @@
-C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 09:41:28 PAGE 1   
+C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 14:14:42 PAGE 1   
 
 
 C51 COMPILER V9.57.0.0, COMPILATION OF MODULE AUDIO
@@ -62,7 +62,7 @@ line level    source
               }
               void MP3_SetVolum(void)
               {
-C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 09:41:28 PAGE 2   
+C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 14:14:42 PAGE 2   
 
                 Mp3Cmd.Len = 6;
                 Mp3Cmd.Cmd = MP3_CMD_SETVOLUM;
@@ -126,7 +126,7 @@ line level    source
                       //Mp3Busy = false;
                       break;
                     case MP3_CMD_RE_ERR:
-C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 09:41:28 PAGE 3   
+C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 14:14:42 PAGE 3   
 
                       PA_PWR_H;
                       //Mp3Busy = false;
@@ -190,7 +190,7 @@ line level    source
  174   1      //  PWM0CR = 0x90;
  175   1        
  176   1        PWM1T1 = 0;
-C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 09:41:28 PAGE 4   
+C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 14:14:42 PAGE 4   
 
  177   1        PWM1T2 = (PWM_CYCLE/2);
  178   1        PWM1CR = 0x90;
@@ -254,7 +254,7 @@ line level    source
  236   3            MP3_Stop();
  237   3            return;
  238   3          }
-C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 09:41:28 PAGE 5   
+C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 14:14:42 PAGE 5   
 
  239   2          PlyIdx = 0;
  240   2          Midx = 1-Midx;
@@ -318,7 +318,7 @@ line level    source
  298          
  299          };
  300          //u16 last = 0;
-C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 09:41:28 PAGE 6   
+C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 14:14:42 PAGE 6   
 
  301          //u16 tmp = 0;
  302          
@@ -382,7 +382,7 @@ line level    source
  360   1        delay(500);
  361   1        WavFileAddr = WavFile[idx-1].FileAddr;
  362   1        WavFileLen = WavFile[idx-1].FileLen;
-C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 09:41:28 PAGE 7   
+C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 14:14:42 PAGE 7   
 
  363   1        
  364   1        PlyIdx = 0;
@@ -446,7 +446,7 @@ line level    source
                 PWM0T2 = (PWM_CYCLE/2);
                 PWM0CR = 0x90;
                 EAXRAM();
-C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 09:41:28 PAGE 8   
+C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 14:14:42 PAGE 8   
 
                 //PWM0_STOP();
                 //PWM_STOP();
@@ -510,7 +510,7 @@ line level    source
                     {
                       PlyIdx = 0xFF;
                       PWM_STOP();
-C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 09:41:28 PAGE 9   
+C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 14:14:42 PAGE 9   
 
                       return;
                     }
@@ -574,7 +574,7 @@ line level    source
  546   1        BeepPlyIdx = 0;
  547   1        PwmTimer = 99;
  548   1        KeyBeepTask();
-C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 09:41:28 PAGE 10  
+C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 14:14:42 PAGE 10  
 
  549   1        KeyBeepO = 1;
  550   1        RING_E_L;
@@ -638,7 +638,7 @@ line level    source
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
    CODE SIZE        =   1012    ----
-C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 09:41:28 PAGE 11  
+C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 14:14:42 PAGE 11  
 
    CONSTANT SIZE    =     55    ----
    XDATA SIZE       =   2211      11
