@@ -1,4 +1,4 @@
-C51 COMPILER V9.57.0.0   MAIN                                                              08/04/2022 14:14:42 PAGE 1   
+C51 COMPILER V9.57.0.0   MAIN                                                              08/04/2022 16:08:15 PAGE 1   
 
 
 C51 COMPILER V9.57.0.0, COMPILATION OF MODULE MAIN
@@ -52,7 +52,7 @@ line level    source
   42   1        WDT_config();
   43   1        SysIdleCon();
   44   1        CardReadInit();
-  45   1        MP3_StartPlay(MP3_Speak);
+  45   1        MP3_StartPlay(MP3_Systemactive);
   46   1      #ifdef PWM_BEEP
               //#if 1 //(defined(PWM_BEEP) || defined(KEY_BEEP))
                 MP3_StartPlay(MP3_SetOK);
@@ -62,7 +62,7 @@ line level    source
   52   1      #else
                 MP3_StartPlay(MP3_SetOK);
               #endif
-C51 COMPILER V9.57.0.0   MAIN                                                              08/04/2022 14:14:42 PAGE 2   
+C51 COMPILER V9.57.0.0   MAIN                                                              08/04/2022 16:08:15 PAGE 2   
 
   55   1        while(1)
   56   1        {
@@ -126,7 +126,7 @@ line level    source
  114   6                  SysIdleCon();
  115   6                }
  116   5                else if(UnlockTime == 0)
-C51 COMPILER V9.57.0.0   MAIN                                                              08/04/2022 14:14:42 PAGE 3   
+C51 COMPILER V9.57.0.0   MAIN                                                              08/04/2022 16:08:15 PAGE 3   
 
  117   5                {
  118   6                  ShowTalkTime();
@@ -190,7 +190,7 @@ line level    source
  175   2      //      }
  176   2      //      CardReadInit();
  177   2      //    }
-C51 COMPILER V9.57.0.0   MAIN                                                              08/04/2022 14:14:42 PAGE 4   
+C51 COMPILER V9.57.0.0   MAIN                                                              08/04/2022 16:08:15 PAGE 4   
 
  178   2          
  179   2      

@@ -42,7 +42,7 @@ void main(void)
 	WDT_config();
 	SysIdleCon();
 	CardReadInit();
-	MP3_StartPlay(MP3_Speak);
+	MP3_StartPlay(MP3_Systemactive);
 #ifdef PWM_BEEP
 //#if 1	//(defined(PWM_BEEP) || defined(KEY_BEEP))
 	MP3_StartPlay(MP3_SetOK);

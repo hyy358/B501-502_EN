@@ -1,4 +1,4 @@
-C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 14:16:59 PAGE 1   
+C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 16:30:24 PAGE 1   
 
 
 C51 COMPILER V9.57.0.0, COMPILATION OF MODULE AUDIO
@@ -62,7 +62,7 @@ line level    source
               {
                 Mp3Cmd.Len = 6;
                 Mp3Cmd.Cmd = MP3_CMD_SETVOLUM;
-C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 14:16:59 PAGE 2   
+C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 16:30:24 PAGE 2   
 
                 Mp3Cmd.Para1 = 0;
                 Mp3Cmd.Para2 = 30;
@@ -126,7 +126,7 @@ line level    source
                     case MP3_CMD_RE_ERR:
                       PA_PWR_H;
                       //Mp3Busy = false;
-C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 14:16:59 PAGE 3   
+C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 16:30:24 PAGE 3   
 
                       break;
                   }
@@ -190,7 +190,7 @@ line level    source
  174          //WavFileType WavFile[MP3_Last-1]=
  175          //{
  176          //{0,51170},
-C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 14:16:59 PAGE 4   
+C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 16:30:24 PAGE 4   
 
  177          //{51170,77254},
  178          //{128424,133702},
@@ -235,192 +235,194 @@ line level    source
  217          {503622,192386},
  218          {696008,44348},
  219          {740356,33482},
- 220          {773838,32646},
- 221          {806484,59394},
- 222          {865878,95338},
- 223          {961216,12842},
- 224          #endif
- 225          };
- 226          void WavReadTask(void)
- 227          {
- 228   1        uint8_t midx;
- 229   1      //  uint16_t i,tmp;
- 230   1        if(WavNeedRead)
- 231   1        {
- 232   2          WavNeedRead = false;
- 233   2          midx = 1-Midx;
- 234   2          if((WavFileLen == 0) || (WavReadIdx == WavFileLen))
- 235   2          {
- 236   3            MP3_Stop();
- 237   3            return;
- 238   3          }
-C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 14:16:59 PAGE 5   
+ 220          //{773838,51036},
+ 221          {773838,32646},
+ 222          {806484,59394},
+ 223          {865878,95338},
+ 224          {961216,12842},
+ 225          {974058,51036},
+ 226          #endif
+ 227          };
+ 228          void WavReadTask(void)
+ 229          {
+ 230   1        uint8_t midx;
+ 231   1      //  uint16_t i,tmp;
+ 232   1        if(WavNeedRead)
+ 233   1        {
+ 234   2          WavNeedRead = false;
+ 235   2          midx = 1-Midx;
+ 236   2          if((WavFileLen == 0) || (WavReadIdx == WavFileLen))
+ 237   2          {
+ 238   3            MP3_Stop();
+C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 16:30:24 PAGE 5   
 
- 239   2          if((WavFileLen-WavReadIdx) >  WAV_BUFLEN)
- 240   2          {
- 241   3            WavBufLen[midx] = WAV_BUFLEN;
- 242   3            WavReadIdx += WAV_BUFLEN;
- 243   3          }
- 244   2          else
- 245   2          {
- 246   3            WavBufLen[midx] = WavFileLen-WavReadIdx;
- 247   3            WavFileLen = 0;
- 248   3            if(((IdleTime > 0) && (IdleTime <= 3)) || ((SysStatus != SYS_TALK) && (SysStatus != SYS_CALL)))
- 249   3            {
- 250   4              PA_PWR_H;
- 251   4            }
- 252   3            
- 253   3          }
- 254   2          SPI_Flash_Read(WavBuf[midx],WavFileAddr+WavReadIdx,WavBufLen[midx]);
- 255   2      //    for(i=0;i<WavBufLen[midx];i++)
- 256   2      //    {
- 257   2      //      tmp = WavBuf[midx][i];
- 258   2      //      WavBuf[midx][i] = (tmp*SysPara.TalkVolum*2)/5;
- 259   2      //    }
- 260   2        }
- 261   1      }
- 262          
- 263          void PWMtask(void)
- 264          {
- 265   1        //uint16_t tmp;
- 266   1        if(PlyIdx < WavBufLen[Midx])
- 267   1        {
- 268   2          EAXSFR();
- 269   2      //    tmp = WavBuf[Midx][PlyIdx+1];
- 270   2      //    tmp <<= 8;
- 271   2      //    tmp |= WavBuf[Midx][PlyIdx];
- 272   2      //    PlyIdx += 2;
- 273   2      //    if(tmp < 0){PlyIdx += 2;return;}
- 274   2          PWM0T2 = WavBuf[Midx][PlyIdx++];
- 275   2          EAXRAM();
- 276   2        }
- 277   1        else
- 278   1        {
- 279   2          PlyIdx = 0;
- 280   2          Midx = 1-Midx;
- 281   2          WavNeedRead = true;
- 282   2        }
- 283   1      }
- 284          
- 285          void MP3_StartPlay(uint8_t idx)
- 286          {
- 287   1        if(!SysPara.ToneEn)
- 288   1        {
- 289   2          return;
- 290   2        }
- 291   1      //  PWM_STOP();
- 292   1        Timer4_Stop();
- 293   1        PA_PWR_L;
- 294   1        delay(500);
- 295   1        WavFileAddr = WavFile[idx-1].FileAddr;
- 296   1        WavFileLen = WavFile[idx-1].FileLen;
- 297   1        
- 298   1        PlyIdx = 0;
- 299   1        WavReadIdx = 0;
- 300   1        WavBufLen[0] = 0;
-C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 14:16:59 PAGE 6   
+ 239   3            return;
+ 240   3          }
+ 241   2          if((WavFileLen-WavReadIdx) >  WAV_BUFLEN)
+ 242   2          {
+ 243   3            WavBufLen[midx] = WAV_BUFLEN;
+ 244   3            WavReadIdx += WAV_BUFLEN;
+ 245   3          }
+ 246   2          else
+ 247   2          {
+ 248   3            WavBufLen[midx] = WavFileLen-WavReadIdx;
+ 249   3            WavFileLen = 0;
+ 250   3            if(((IdleTime > 0) && (IdleTime <= 3)) || ((SysStatus != SYS_TALK) && (SysStatus != SYS_CALL)))
+ 251   3            {
+ 252   4              PA_PWR_H;
+ 253   4            }
+ 254   3            
+ 255   3          }
+ 256   2          SPI_Flash_Read(WavBuf[midx],WavFileAddr+WavReadIdx,WavBufLen[midx]);
+ 257   2      //    for(i=0;i<WavBufLen[midx];i++)
+ 258   2      //    {
+ 259   2      //      tmp = WavBuf[midx][i];
+ 260   2      //      WavBuf[midx][i] = (tmp*SysPara.TalkVolum*2)/5;
+ 261   2      //    }
+ 262   2        }
+ 263   1      }
+ 264          
+ 265          void PWMtask(void)
+ 266          {
+ 267   1        //uint16_t tmp;
+ 268   1        if(PlyIdx < WavBufLen[Midx])
+ 269   1        {
+ 270   2          EAXSFR();
+ 271   2      //    tmp = WavBuf[Midx][PlyIdx+1];
+ 272   2      //    tmp <<= 8;
+ 273   2      //    tmp |= WavBuf[Midx][PlyIdx];
+ 274   2      //    PlyIdx += 2;
+ 275   2      //    if(tmp < 0){PlyIdx += 2;return;}
+ 276   2          PWM0T2 = WavBuf[Midx][PlyIdx++];
+ 277   2          EAXRAM();
+ 278   2        }
+ 279   1        else
+ 280   1        {
+ 281   2          PlyIdx = 0;
+ 282   2          Midx = 1-Midx;
+ 283   2          WavNeedRead = true;
+ 284   2        }
+ 285   1      }
+ 286          
+ 287          void MP3_StartPlay(uint8_t idx)
+ 288          {
+ 289   1        if(!SysPara.ToneEn)
+ 290   1        {
+ 291   2          return;
+ 292   2        }
+ 293   1      //  PWM_STOP();
+ 294   1        Timer4_Stop();
+ 295   1        PA_PWR_L;
+ 296   1        delay(500);
+ 297   1        WavFileAddr = WavFile[idx-1].FileAddr;
+ 298   1        WavFileLen = WavFile[idx-1].FileLen;
+ 299   1        
+ 300   1        PlyIdx = 0;
+C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 16:30:24 PAGE 6   
 
- 301   1        WavBufLen[1] = 0;
- 302   1        
- 303   1        Midx = 1;
- 304   1        WavNeedRead = true;
- 305   1        WavReadTask();
- 306   1        
- 307   1        Midx = 0;
- 308   1        WavNeedRead = true;
- 309   1        WavReadTask();
- 310   1        
- 311   1        PWM_START();
- 312   1        Timer4_Run();
- 313   1        AudioPlaying = true;
- 314   1      }
- 315          void MP3_Stop(void)
- 316          {
- 317   1        if(((IdleTime > 0) && (IdleTime <= 3)) || ((SysStatus != SYS_TALK) && (SysStatus != SYS_CALL)))
- 318   1        {
- 319   2          PA_PWR_H;
- 320   2        }
- 321   1        AudioPlaying = false;
- 322   1      //  PWM_STOP();
- 323   1        Timer4_Stop();
- 324   1      }
- 325          #endif
- 326          
- 327          #ifdef KEY_BEEP
+ 301   1        WavReadIdx = 0;
+ 302   1        WavBufLen[0] = 0;
+ 303   1        WavBufLen[1] = 0;
+ 304   1        
+ 305   1        Midx = 1;
+ 306   1        WavNeedRead = true;
+ 307   1        WavReadTask();
+ 308   1        
+ 309   1        Midx = 0;
+ 310   1        WavNeedRead = true;
+ 311   1        WavReadTask();
+ 312   1        
+ 313   1        PWM_START();
+ 314   1        Timer4_Run();
+ 315   1        AudioPlaying = true;
+ 316   1      }
+ 317          void MP3_Stop(void)
+ 318          {
+ 319   1        if(((IdleTime > 0) && (IdleTime <= 3)) || ((SysStatus != SYS_TALK) && (SysStatus != SYS_CALL)))
+ 320   1        {
+ 321   2          PA_PWR_H;
+ 322   2        }
+ 323   1        AudioPlaying = false;
+ 324   1      //  PWM_STOP();
+ 325   1        Timer4_Stop();
+ 326   1      }
+ 327          #endif
  328          
- 329          code BeepFileType WavCode[] = {
- 330          {3,{3,2,1}},//OK
- 331          {5,{1,0,1,0,1}},//Err
- 332          {7,{1,1,1,0,1,0,1}},//Unlock
- 333          {3,{1,0,1}},//Call
- 334          {1,{1,2}},//Key
- 335          };
- 336          
- 337          u8 BeepPlyIdx = 0xFF;
- 338          u8 PlyN = 0;
- 339          u8 PwmTimer = 0;
- 340          bit KeyBeepO = 0;
- 341          void Beep_StartPlay(u8 idx)
- 342          {
- 343   1        switch(idx)
- 344   1        {
- 345   2          case MP3_InputRoom:
- 346   2          case MP3_InputPsw:
- 347   2          case MP3_Key:
- 348   2            PlyN = 4;
- 349   2            break;
- 350   2          case MP3_SetOK:
- 351   2            PlyN = 0;
- 352   2            break;
- 353   2          case MP3_Unlock:
- 354   2            PlyN = 2;
- 355   2            break;
- 356   2          case MP3_RoomErr:
- 357   2          case MP3_PwdErr:
- 358   2          case MP3_CardErr:
- 359   2          case MP3_Noresponse:
- 360   2            PlyN = 1;
- 361   2            break;
- 362   2          case MP3_Huangup:
-C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 14:16:59 PAGE 7   
+ 329          #ifdef KEY_BEEP
+ 330          
+ 331          code BeepFileType WavCode[] = {
+ 332          {3,{3,2,1}},//OK
+ 333          {5,{1,0,1,0,1}},//Err
+ 334          {7,{1,1,1,0,1,0,1}},//Unlock
+ 335          {3,{1,0,1}},//Call
+ 336          {1,{1,2}},//Key
+ 337          };
+ 338          
+ 339          u8 BeepPlyIdx = 0xFF;
+ 340          u8 PlyN = 0;
+ 341          u8 PwmTimer = 0;
+ 342          bit KeyBeepO = 0;
+ 343          void Beep_StartPlay(u8 idx)
+ 344          {
+ 345   1        switch(idx)
+ 346   1        {
+ 347   2          case MP3_InputRoom:
+ 348   2          case MP3_InputPsw:
+ 349   2          case MP3_Key:
+ 350   2            PlyN = 4;
+ 351   2            break;
+ 352   2          case MP3_SetOK:
+ 353   2            PlyN = 0;
+ 354   2            break;
+ 355   2          case MP3_Unlock:
+ 356   2            PlyN = 2;
+ 357   2            break;
+ 358   2          case MP3_RoomErr:
+ 359   2          case MP3_PwdErr:
+ 360   2          case MP3_CardErr:
+ 361   2          case MP3_Noresponse:
+ 362   2            PlyN = 1;
+C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 16:30:24 PAGE 7   
 
- 363   2          case MP3_Ring:
- 364   2            PlyN = 3;
- 365   2            break;
- 366   2        }
- 367   1        
- 368   1        BeepPlyIdx = 0;
- 369   1        PwmTimer = 99;
- 370   1        KeyBeepTask();
- 371   1        KeyBeepO = 1;
- 372   1      }
- 373          
- 374          void KeyBeepTask(void)
- 375          {
- 376   1        if(BeepPlyIdx != 0xFF)
- 377   1        {
- 378   2          if(++PwmTimer == 100)
- 379   2          {
- 380   3            PwmTimer = 0;
- 381   3            if(BeepPlyIdx >= WavCode[PlyN].Len)
- 382   3            {
- 383   4              BeepPlyIdx = 0xFF;
- 384   4              KeyBeepO = 0;
- 385   4              P62 = 0;
- 386   4              return;
- 387   4            }
- 388   3            KeyBeepO = 1;
- 389   3            BeepPlyIdx++;
- 390   3          }
- 391   2        }
- 392   1      }
- 393          #endif
+ 363   2            break;
+ 364   2          case MP3_Huangup:
+ 365   2          case MP3_Ring:
+ 366   2            PlyN = 3;
+ 367   2            break;
+ 368   2        }
+ 369   1        
+ 370   1        BeepPlyIdx = 0;
+ 371   1        PwmTimer = 99;
+ 372   1        KeyBeepTask();
+ 373   1        KeyBeepO = 1;
+ 374   1      }
+ 375          
+ 376          void KeyBeepTask(void)
+ 377          {
+ 378   1        if(BeepPlyIdx != 0xFF)
+ 379   1        {
+ 380   2          if(++PwmTimer == 100)
+ 381   2          {
+ 382   3            PwmTimer = 0;
+ 383   3            if(BeepPlyIdx >= WavCode[PlyN].Len)
+ 384   3            {
+ 385   4              BeepPlyIdx = 0xFF;
+ 386   4              KeyBeepO = 0;
+ 387   4              P62 = 0;
+ 388   4              return;
+ 389   4            }
+ 390   3            KeyBeepO = 1;
+ 391   3            BeepPlyIdx++;
+ 392   3          }
+ 393   2        }
+ 394   1      }
+ 395          #endif
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
    CODE SIZE        =    968    ----
    CONSTANT SIZE    =     55    ----
-   XDATA SIZE       =   2198      11
+   XDATA SIZE       =   2206      11
    PDATA SIZE       =   ----    ----
    DATA SIZE        =   ----    ----
    IDATA SIZE       =   ----    ----

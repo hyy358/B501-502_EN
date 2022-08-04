@@ -25,6 +25,7 @@ typedef enum
 	MP3_CallAlt,
 	MP3_InputRoomAndBel,
 	MP3_Key,
+	MP3_Systemactive,
 	MP3_Last,
 }AudioIdxype;
 

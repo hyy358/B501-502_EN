@@ -1,4 +1,4 @@
-C51 COMPILER V9.57.0.0   SYSSTRING                                                         08/04/2022 14:16:59 PAGE 1   
+C51 COMPILER V9.57.0.0   SYSSTRING                                                         08/04/2022 16:30:24 PAGE 1   
 
 
 C51 COMPILER V9.57.0.0, COMPILATION OF MODULE SYSSTRING
@@ -62,7 +62,7 @@ line level    source
   51          code char StrTabRingTime[] = {"Call panel:"};
   52          code char StrTabCallTime[] = {"Ring time:"};
   53          code char StrTabTone[] = {"Voice           Instructions:"};
-C51 COMPILER V9.57.0.0   SYSSTRING                                                         08/04/2022 14:16:59 PAGE 2   
+C51 COMPILER V9.57.0.0   SYSSTRING                                                         08/04/2022 16:30:24 PAGE 2   
 
   54          code char StrTabCamrea[] = {"Camera:"};
   55          code char StrTabRelay[] = {"Relay time:"};
@@ -126,7 +126,7 @@ line level    source
               code char StrTabDel[] = {"לאשר מחיקה ?"};
               code char StrTabDelOK[] = {"  נמחק!"};
               code char StrTabDelAllPsw[] = {"האם למחוק הכל ?"};
-C51 COMPILER V9.57.0.0   SYSSTRING                                                         08/04/2022 14:16:59 PAGE 3   
+C51 COMPILER V9.57.0.0   SYSSTRING                                                         08/04/2022 16:30:24 PAGE 3   
 
               code char StrTabPswSet1[] = {"1- הוסף סיסמה"};
               code char StrTabPswSet2[] = {"2-מחק סיסמה"};
@@ -190,7 +190,7 @@ line level    source
               code char StrTabSms[] = {"Sms"};
               
               #endif
-C51 COMPILER V9.57.0.0   SYSSTRING                                                         08/04/2022 14:16:59 PAGE 4   
+C51 COMPILER V9.57.0.0   SYSSTRING                                                         08/04/2022 16:30:24 PAGE 4   
 
  178          //code char StrTabGsmCsqErr[] = {"אבגדהוזחטיךכלםמןנסעףפץצקרשת"};
  179          //code char StrTabMain1[] = {"אבגדהוזחטיךכלםמן"};
@@ -254,7 +254,7 @@ line level    source
  237          {
  238   1        LcdClear();
  239   1        DisplayString(1,0,StrTabRoomErr);
-C51 COMPILER V9.57.0.0   SYSSTRING                                                         08/04/2022 14:16:59 PAGE 5   
+C51 COMPILER V9.57.0.0   SYSSTRING                                                         08/04/2022 16:30:24 PAGE 5   
 
  240   1        
  241   1      }
@@ -318,7 +318,7 @@ line level    source
  299          void ShowMain(uint8_t first)
  300          {
  301   1        //if((first != 0) && (first != 3) && (first != 5) && (first != 8))
-C51 COMPILER V9.57.0.0   SYSSTRING                                                         08/04/2022 14:16:59 PAGE 6   
+C51 COMPILER V9.57.0.0   SYSSTRING                                                         08/04/2022 16:30:24 PAGE 6   
 
  302   1      //  if((first != 0) && (first != 5))
  303   1      //  {
@@ -382,7 +382,7 @@ line level    source
  361   1        if(first == 0)
  362   1        {
  363   2          DisplayString(0,0,StrTabMain5);
-C51 COMPILER V9.57.0.0   SYSSTRING                                                         08/04/2022 14:16:59 PAGE 7   
+C51 COMPILER V9.57.0.0   SYSSTRING                                                         08/04/2022 16:30:24 PAGE 7   
 
  364   2          //DisplayIco(0,7,4);
  365   2          
@@ -446,7 +446,7 @@ line level    source
  423          void ShowReset(void)
  424          {
  425   1        LcdClear();
-C51 COMPILER V9.57.0.0   SYSSTRING                                                         08/04/2022 14:16:59 PAGE 8   
+C51 COMPILER V9.57.0.0   SYSSTRING                                                         08/04/2022 16:30:24 PAGE 8   
 
  426   1        DisplayString(1,0,StrTabReset);
  427   1      }

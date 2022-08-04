@@ -38,7 +38,7 @@ void main(void)
 	GSM_StartInit();
 	CardReadInit();
 	SysIdleCon();
-	MP3_StartPlay(MP3_Speak);  //开机启动
+	MP3_StartPlay(MP3_Systemactive);  //开机启动
 	//WdtConfig();
 	//printf("EEPROM_ADDR_END,%d\r\n",EEPROM_ADDR_END);
 	//RevNamelist("C:2;R:1001;N:HuangSheng;T1:18859119836;T2:123;T3:456;R:1002;N:wang;T1:17750651602;T2:;T3:;");

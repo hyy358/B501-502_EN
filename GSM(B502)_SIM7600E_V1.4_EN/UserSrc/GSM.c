@@ -450,7 +450,7 @@ uint16_t TalkTime = 0;
 uint8_t PaOpenTime = 0;
 bool GSM_Call(uint8_t * tel)
 {
-	if((GsmStatus == GSM_ST_ATOVER) || (GsmStatus == GSM_ST_WAITHUNGUP) || (WaitCsq))
+ 	if((GsmStatus == GSM_ST_ATOVER) || (GsmStatus == GSM_ST_WAITHUNGUP) || (WaitCsq))
 	{
 		PrintString3("ATD");
 		PrintString3(tel);
@@ -567,7 +567,7 @@ void GSM_InitTask(void)
 				if(--CallOutTime == 0)
 				{
 					GSM_Huangup();
-					MP3_StartPlay(MP3_Huangup);					
+					//MP3_StartPlay(MP3_Huangup);					
 					TalkTime = 0;
 //					while(CallTleIdx < (TEL_COUNT-1))
 //					{

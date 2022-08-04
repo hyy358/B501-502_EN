@@ -1,4 +1,4 @@
-C51 COMPILER V9.57.0.0   MAIN                                                              08/04/2022 14:16:58 PAGE 1   
+C51 COMPILER V9.57.0.0   MAIN                                                              08/04/2022 16:30:24 PAGE 1   
 
 
 C51 COMPILER V9.57.0.0, COMPILATION OF MODULE MAIN
@@ -48,7 +48,7 @@ line level    source
   38   1        GSM_StartInit();
   39   1        CardReadInit();
   40   1        SysIdleCon();
-  41   1        MP3_StartPlay(MP3_Speak);  //开机启动
+  41   1        MP3_StartPlay(MP3_Systemactive);  //开机启动
   42   1        //WdtConfig();
   43   1        //printf("EEPROM_ADDR_END,%d\r\n",EEPROM_ADDR_END);
   44   1        //RevNamelist("C:2;R:1001;N:HuangSheng;T1:18859119836;T2:123;T3:456;R:1002;N:wang;T1:17750651602;T2:;T3:;
@@ -62,7 +62,7 @@ line level    source
   51   3            Uart1Clear();
   52   3          }
   53   2          if(COM3.B_RX_OK)
-C51 COMPILER V9.57.0.0   MAIN                                                              08/04/2022 14:16:58 PAGE 2   
+C51 COMPILER V9.57.0.0   MAIN                                                              08/04/2022 16:30:24 PAGE 2   
 
   54   2          {
   55   3            printf("%s",RX3_Buffer);
@@ -126,7 +126,7 @@ line level    source
  113   4              {
  114   5                if(--IdleTime == 0)
  115   5                {
-C51 COMPILER V9.57.0.0   MAIN                                                              08/04/2022 14:16:58 PAGE 3   
+C51 COMPILER V9.57.0.0   MAIN                                                              08/04/2022 16:30:24 PAGE 3   
 
  116   6                  SysIdleCon();
  117   6                }
@@ -190,7 +190,7 @@ line level    source
  174   3      //        ShowGsmCsq();
  175   3      //      }
  176   3            GsmCsqFlag = false;
-C51 COMPILER V9.57.0.0   MAIN                                                              08/04/2022 14:16:58 PAGE 4   
+C51 COMPILER V9.57.0.0   MAIN                                                              08/04/2022 16:30:24 PAGE 4   
 
  177   3          }
  178   2          if(CardReadOK)

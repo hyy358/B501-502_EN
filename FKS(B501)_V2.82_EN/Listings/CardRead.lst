@@ -1,4 +1,4 @@
-C51 COMPILER V9.57.0.0   CARDREAD                                                          08/04/2022 14:14:42 PAGE 1   
+C51 COMPILER V9.57.0.0   CARDREAD                                                          08/04/2022 16:08:16 PAGE 1   
 
 
 C51 COMPILER V9.57.0.0, COMPILATION OF MODULE CARDREAD
@@ -62,7 +62,7 @@ line level    source
   51          void WG_Read26(void)
   52          {
   53   1        
-C51 COMPILER V9.57.0.0   CARDREAD                                                          08/04/2022 14:14:42 PAGE 2   
+C51 COMPILER V9.57.0.0   CARDREAD                                                          08/04/2022 16:08:16 PAGE 2   
 
   54   1        if((WG_wait == true) && ((RFID_DAT0 != 1) || (RFID_DAT1 != 1)) )  //×ÜÏß´ý»úÅÐ¶Ï
   55   1        {
@@ -126,7 +126,7 @@ line level    source
  113   3            one_num++;
  114   3            check_temp >>= 1;
  115   3          }
-C51 COMPILER V9.57.0.0   CARDREAD                                                          08/04/2022 14:14:42 PAGE 3   
+C51 COMPILER V9.57.0.0   CARDREAD                                                          08/04/2022 16:08:16 PAGE 3   
 
  116   2      
  117   2          if(one_num % 2 ==0)
@@ -190,7 +190,7 @@ line level    source
  175          //  uint32_t num;
  176          //  uint8_t tmp;
  177          //  uint8_t chk;
-C51 COMPILER V9.57.0.0   CARDREAD                                                          08/04/2022 14:14:42 PAGE 4   
+C51 COMPILER V9.57.0.0   CARDREAD                                                          08/04/2022 16:08:16 PAGE 4   
 
  178          //  
  179          //  CardInTime = 1000;
@@ -254,7 +254,7 @@ line level    source
  237          //      for(j=0,chk = 0;j<4;j++)
  238          //      {
  239          //        if((tmp & 0x01) == 0x01)
-C51 COMPILER V9.57.0.0   CARDREAD                                                          08/04/2022 14:14:42 PAGE 5   
+C51 COMPILER V9.57.0.0   CARDREAD                                                          08/04/2022 16:08:16 PAGE 5   
 
  240          //        {
  241          //          chk++;
@@ -318,7 +318,7 @@ line level    source
  299          //}
  300          
  301          //#define CARD_TL_MIN 17
-C51 COMPILER V9.57.0.0   CARDREAD                                                          08/04/2022 14:14:42 PAGE 6   
+C51 COMPILER V9.57.0.0   CARDREAD                                                          08/04/2022 16:08:16 PAGE 6   
 
  302          //#define CARD_TL_MAX 35
  303          //#define CARD_TH_MIN 40
@@ -382,7 +382,7 @@ line level    source
  361          //      {
  362          //        CardBitCount = 0;
  363          //        CardRaw[CardChCount++] = CardCh;
-C51 COMPILER V9.57.0.0   CARDREAD                                                          08/04/2022 14:14:42 PAGE 7   
+C51 COMPILER V9.57.0.0   CARDREAD                                                          08/04/2022 16:08:16 PAGE 7   
 
  364          //        if(CardChCount >= 5)
  365          //        {

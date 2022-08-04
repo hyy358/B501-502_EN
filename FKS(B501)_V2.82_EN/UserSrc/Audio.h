@@ -13,6 +13,24 @@
 #endif
 typedef enum
 {
+//	MP3_InputRoom = 15,
+//	MP3_InputPsw = 2,
+//	MP3_Unlock,
+//	MP3_RoomErr,
+//	MP3_PwdErr,
+//	MP3_SetOK,
+//	MP3_CardErr,
+//	MP3_Huangup,
+//	MP3_Noresponse,
+//	MP3_Ring,
+//	MP3_Failed,
+//	MP3_Calling,
+////	MP3_NoSimCard,
+//	MP3_Speak,
+//	MP3_CallAlt,
+//	MP3_InputRoomAndBel,
+//	MP3_Key,
+//	MP3_Last,
   MP3_InputRoom = 15,
 	MP3_InputPsw = 2,
 	MP3_Unlock,
@@ -25,11 +43,12 @@ typedef enum
 	MP3_Ring,
 	MP3_Failed,
 	MP3_Calling,
-	MP3_NoSimCard,
+//	MP3_Systemactive,
 	MP3_Speak,
 	MP3_CallAlt,
 	MP3_InputRoomAndBel,
 	MP3_Key,
+	MP3_Systemactive,
 	MP3_Last,
 }AudioIdxype;
 
