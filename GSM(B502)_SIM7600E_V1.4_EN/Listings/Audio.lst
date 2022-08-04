@@ -1,4 +1,4 @@
-C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 09:22:02 PAGE 1   
+C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 14:16:59 PAGE 1   
 
 
 C51 COMPILER V9.57.0.0, COMPILATION OF MODULE AUDIO
@@ -62,7 +62,7 @@ line level    source
               {
                 Mp3Cmd.Len = 6;
                 Mp3Cmd.Cmd = MP3_CMD_SETVOLUM;
-C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 09:22:02 PAGE 2   
+C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 14:16:59 PAGE 2   
 
                 Mp3Cmd.Para1 = 0;
                 Mp3Cmd.Para2 = 30;
@@ -126,7 +126,7 @@ line level    source
                     case MP3_CMD_RE_ERR:
                       PA_PWR_H;
                       //Mp3Busy = false;
-C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 09:22:02 PAGE 3   
+C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 14:16:59 PAGE 3   
 
                       break;
                   }
@@ -190,7 +190,7 @@ line level    source
  174          //WavFileType WavFile[MP3_Last-1]=
  175          //{
  176          //{0,51170},
-C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 09:22:02 PAGE 4   
+C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 14:16:59 PAGE 4   
 
  177          //{51170,77254},
  178          //{128424,133702},
@@ -254,7 +254,7 @@ line level    source
  236   3            MP3_Stop();
  237   3            return;
  238   3          }
-C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 09:22:02 PAGE 5   
+C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 14:16:59 PAGE 5   
 
  239   2          if((WavFileLen-WavReadIdx) >  WAV_BUFLEN)
  240   2          {
@@ -318,7 +318,7 @@ line level    source
  298   1        PlyIdx = 0;
  299   1        WavReadIdx = 0;
  300   1        WavBufLen[0] = 0;
-C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 09:22:02 PAGE 6   
+C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 14:16:59 PAGE 6   
 
  301   1        WavBufLen[1] = 0;
  302   1        
@@ -382,7 +382,7 @@ line level    source
  360   2            PlyN = 1;
  361   2            break;
  362   2          case MP3_Huangup:
-C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 09:22:02 PAGE 7   
+C51 COMPILER V9.57.0.0   AUDIO                                                             08/04/2022 14:16:59 PAGE 7   
 
  363   2          case MP3_Ring:
  364   2            PlyN = 3;

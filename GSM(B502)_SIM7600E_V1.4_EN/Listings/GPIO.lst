@@ -1,4 +1,4 @@
-C51 COMPILER V9.57.0.0   GPIO                                                              08/04/2022 09:22:02 PAGE 1   
+C51 COMPILER V9.57.0.0   GPIO                                                              08/04/2022 14:16:59 PAGE 1   
 
 
 C51 COMPILER V9.57.0.0, COMPILATION OF MODULE GPIO
@@ -62,7 +62,7 @@ line level    source
   52   2          if(GPIOx->Mode == GPIO_HighZ)   P5M1 |=  GPIOx->Pin,  P5M0 &= ~GPIOx->Pin;   //浮空输入
   53   2          if(GPIOx->Mode == GPIO_OUT_OD)    P5M1 |=  GPIOx->Pin,  P5M0 |=  GPIOx->Pin;   //开漏输出
   54   2          if(GPIOx->Mode == GPIO_OUT_PP)    P5M1 &= ~GPIOx->Pin,  P5M0 |=  GPIOx->Pin;   //推挽输出
-C51 COMPILER V9.57.0.0   GPIO                                                              08/04/2022 09:22:02 PAGE 2   
+C51 COMPILER V9.57.0.0   GPIO                                                              08/04/2022 14:16:59 PAGE 2   
 
   55   2        }
   56   1        if(GPIO == GPIO_P6)

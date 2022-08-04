@@ -1,4 +1,4 @@
-C51 COMPILER V9.57.0.0   GSM                                                               08/04/2022 09:22:01 PAGE 1   
+C51 COMPILER V9.57.0.0   GSM                                                               08/04/2022 14:16:58 PAGE 1   
 
 
 C51 COMPILER V9.57.0.0, COMPILATION OF MODULE GSM
@@ -62,7 +62,7 @@ line level    source
   52   1          code uint8_t *rspStrTable[] = {"+CPIN: NOT INSERTED","ERROR","+CPIN: READY","+CPIN: NOT READY"};
   53   1          int  rspType = -1;
   54   1          uint8_t  n = 0;
-C51 COMPILER V9.57.0.0   GSM                                                               08/04/2022 09:22:01 PAGE 2   
+C51 COMPILER V9.57.0.0   GSM                                                               08/04/2022 14:16:58 PAGE 2   
 
   55   1          uint8_t  stat = 0;
   56   1          uint8_t  i = 0;
@@ -126,7 +126,7 @@ line level    source
  114   2      //      ShowGsmCsq();
  115   2            rspValue  = AT_RSP_FUN_OVER;
  116   2            break;
-C51 COMPILER V9.57.0.0   GSM                                                               08/04/2022 09:22:01 PAGE 3   
+C51 COMPILER V9.57.0.0   GSM                                                               08/04/2022 14:16:58 PAGE 3   
 
  117   2              default:
  118   2            break;
@@ -190,7 +190,7 @@ line level    source
  176   2            {                          /* registered */
  177   3              rspValue  = AT_RSP_FUN_OVER;
  178   3              count = 0;
-C51 COMPILER V9.57.0.0   GSM                                                               08/04/2022 09:22:01 PAGE 4   
+C51 COMPILER V9.57.0.0   GSM                                                               08/04/2022 14:16:58 PAGE 4   
 
  179   3            }
  180   2            else {                     /* searching */
@@ -254,7 +254,7 @@ line level    source
                 printf("SmsBuf:%s\r\n",SmsBuf);
               }
               void SendSmsDone()
-C51 COMPILER V9.57.0.0   GSM                                                               08/04/2022 09:22:01 PAGE 5   
+C51 COMPILER V9.57.0.0   GSM                                                               08/04/2022 14:16:58 PAGE 5   
 
               {
                 SmsBusy = false;
@@ -318,7 +318,7 @@ line level    source
  300   3                  }
  301   2              }
  302   1      //        p = (u8*)strchr(p,0x0a);
-C51 COMPILER V9.57.0.0   GSM                                                               08/04/2022 09:22:01 PAGE 6   
+C51 COMPILER V9.57.0.0   GSM                                                               08/04/2022 14:16:58 PAGE 6   
 
  303   1      //    }
  304   1      
@@ -382,7 +382,7 @@ line level    source
  362              {"AT+COPS=0\r\n",AtCmdCb_at},
  363          //    {"AT+QCFG=\"nwscanmode\",0\r\n",AtCmdCb_at},
  364              {"AT+CREG?\r\n",AtCmdCb_creg},
-C51 COMPILER V9.57.0.0   GSM                                                               08/04/2022 09:22:01 PAGE 7   
+C51 COMPILER V9.57.0.0   GSM                                                               08/04/2022 14:16:58 PAGE 7   
 
  365          //    {"AT+CFUN=1\r\n",AtCmdCb_at},
  366              {"AT+CLCC=1\r\n",AtCmdCb_clcc},
@@ -446,7 +446,7 @@ line level    source
  424   1        {
  425   2          return;
  426   2        }
-C51 COMPILER V9.57.0.0   GSM                                                               08/04/2022 09:22:01 PAGE 8   
+C51 COMPILER V9.57.0.0   GSM                                                               08/04/2022 14:16:58 PAGE 8   
 
  427   1        GsmInitTime = 1000;
  428   1        GsmStatus = GSM_ST_WAITAT;
@@ -510,7 +510,7 @@ line level    source
  486   1        {
  487   2          case GSM_ST_PWRDOWN:
  488   2            if(--GsmInitTime == 0)
-C51 COMPILER V9.57.0.0   GSM                                                               08/04/2022 09:22:01 PAGE 9   
+C51 COMPILER V9.57.0.0   GSM                                                               08/04/2022 14:16:58 PAGE 9   
 
  489   2            {
  490   3              GSM_PWREN_L;
@@ -574,7 +574,7 @@ line level    source
  548   4              }
  549   3              else
  550   3              {
-C51 COMPILER V9.57.0.0   GSM                                                               08/04/2022 09:22:01 PAGE 10  
+C51 COMPILER V9.57.0.0   GSM                                                               08/04/2022 14:16:58 PAGE 10  
 
  551   4                printf("AT cmd execute 10ed Fail : %bd [%s] !\r\n",AtCmdIdx,AtCmdBuf[AtCmdIdx].p_atCmdStr);
  552   4                GSM_Repower();
@@ -638,7 +638,7 @@ line level    source
  610   4                
  611   4                TalkTime = SysPara.TalkTime;
  612   4                Volum = SysPara.TalkVolum;
-C51 COMPILER V9.57.0.0   GSM                                                               08/04/2022 09:22:01 PAGE 11  
+C51 COMPILER V9.57.0.0   GSM                                                               08/04/2022 14:16:58 PAGE 11  
 
  613   4                GSM_SetVolum(Volum);
  614   4              }
@@ -678,208 +678,209 @@ line level    source
  648   6                  }
  649   5                }
  650   4                GSM_Huangup();
- 651   4                SysIdleCon();
- 652   4              }
- 653   3            }
- 654   2            break;
- 655   2          default:
- 656   2            break;
- 657   2        }
- 658   1      }
- 659          
- 660          void ModemReceiveHandle(uint8_t *buf)
- 661          {
- 662   1        code char *rspStrTable[13] = {
- 663   1          "NORMAL POWER DOWN",
- 664   1          "UNDER-VOLTAGE POWER DOWN",
- 665   1          "NO DIALTONE",
- 666   1          "NO CARRIER",
- 667   1          "RING",
- 668   1          "+CLCC: ",
- 669   1          "+DTMF: ",
- 670   1          "+RXDTMF: ",
- 671   1          "+COLP:",
- 672   1          "+QTONEDET:",
- 673   1          "AT+CMGS=",
- 674   1          "+CMGS:",
-C51 COMPILER V9.57.0.0   GSM                                                               08/04/2022 09:22:01 PAGE 12  
+ 651   4                MP3_StartPlay(MP3_Huangup);
+ 652   4                SysIdleCon();
+ 653   4              }
+ 654   3            }
+ 655   2            break;
+ 656   2          default:
+ 657   2            break;
+ 658   2        }
+ 659   1      }
+ 660          
+ 661          void ModemReceiveHandle(uint8_t *buf)
+ 662          {
+ 663   1        code char *rspStrTable[13] = {
+ 664   1          "NORMAL POWER DOWN",
+ 665   1          "UNDER-VOLTAGE POWER DOWN",
+ 666   1          "NO DIALTONE",
+ 667   1          "NO CARRIER",
+ 668   1          "RING",
+ 669   1          "+CLCC: ",
+ 670   1          "+DTMF: ",
+ 671   1          "+RXDTMF: ",
+ 672   1          "+COLP:",
+ 673   1          "+QTONEDET:",
+ 674   1          "AT+CMGS=",
+C51 COMPILER V9.57.0.0   GSM                                                               08/04/2022 14:16:58 PAGE 12  
 
- 675   1          "ERROR"};
- 676   1        int  rspType = -1;
- 677   1          int  i = 0;
- 678   1          uint8_t  *p = buf;
- 679   1        uint8_t j,stat;
- 680   1      
- 681   1        for (i = 0; i < 13; i++)
- 682   1        {
- 683   2          if(lookforstr(p,rspStrTable[i])!=-1)
- 684   2          {
- 685   3              rspType = i;
- 686   3              break;
- 687   3          }
- 688   2        }
- 689   1        printf("rspType:%bd - %d\r\n",GsmStatus,rspType);
- 690   1        switch(rspType)
- 691   1        {
- 692   2          case 0:
- 693   2          case 1:
- 694   2          case 2:
- 695   2            if((GsmStatus == GSM_ST_CALL) || (GsmStatus == GSM_ST_TALK) || (GsmStatus == GSM_ST_WAITHUNGUP))
- 696   2            {
- 697   3      //        PA_PWR_H;
- 698   3              ShowGsmErr();
- 699   3              IdleTime = 5;
- 700   3            }
- 701   2            GSM_Repower();
- 702   2            break;
- 703   2          case 3://对方挂机
- 704   2            //PrintString3("ATH\r\n");
- 705   2            if((GsmStatus == GSM_ST_CALL) && (strlen(NameItemCall.Tel[CallTleIdx+1]) > 0))
- 706   2            {
- 707   3              GsmStatus = GSM_ST_WAITHUNGUP;
- 708   3              CallOutTime = 2;
- 709   3              return;
- 710   3            }
- 711   2            if(GsmStatus == GSM_ST_WAITHUNGUP)
- 712   2            {
- 713   3              return;
- 714   3            }
- 715   2            GSM_Huangup();
- 716   2            MP3_StartPlay(MP3_Huangup);
- 717   2            SysIdleCon();
- 718   2            break;
- 719   2          case 4://振铃
- 720   2            //PA_PWR_L;
- 721   2            //PrintString3("ATA\r\n");
- 722   2            if(GsmStatus != GSM_ST_CALLIN)
- 723   2            {
- 724   3              GsmStatus = GSM_ST_CALLIN;
- 725   3              //CallInTime = SysPara.RingInTs;
- 726   3              if(SysPara.RingInTs == 1)
- 727   3              {
- 728   4                CallInTime = 2;
- 729   4              }
- 730   3              else
- 731   3              {
- 732   4                GSM_Huangup();
- 733   4                MP3_StartPlay(MP3_Huangup);
- 734   4              }
- 735   3            }
- 736   2      //      if(--CallInTime == 0)
-C51 COMPILER V9.57.0.0   GSM                                                               08/04/2022 09:22:01 PAGE 13  
+ 675   1          "+CMGS:",
+ 676   1          "ERROR"};
+ 677   1        int  rspType = -1;
+ 678   1          int  i = 0;
+ 679   1          uint8_t  *p = buf;
+ 680   1        uint8_t j,stat;
+ 681   1      
+ 682   1        for (i = 0; i < 13; i++)
+ 683   1        {
+ 684   2          if(lookforstr(p,rspStrTable[i])!=-1)
+ 685   2          {
+ 686   3              rspType = i;
+ 687   3              break;
+ 688   3          }
+ 689   2        }
+ 690   1        printf("rspType:%bd - %d\r\n",GsmStatus,rspType);
+ 691   1        switch(rspType)
+ 692   1        {
+ 693   2          case 0:
+ 694   2          case 1:
+ 695   2          case 2:
+ 696   2            if((GsmStatus == GSM_ST_CALL) || (GsmStatus == GSM_ST_TALK) || (GsmStatus == GSM_ST_WAITHUNGUP))
+ 697   2            {
+ 698   3      //        PA_PWR_H;
+ 699   3              ShowGsmErr();
+ 700   3              IdleTime = 5;
+ 701   3            }
+ 702   2            GSM_Repower();
+ 703   2            break;
+ 704   2          case 3://对方挂机
+ 705   2            //PrintString3("ATH\r\n");
+ 706   2            if((GsmStatus == GSM_ST_CALL) && (strlen(NameItemCall.Tel[CallTleIdx+1]) > 0))
+ 707   2            {
+ 708   3              GsmStatus = GSM_ST_WAITHUNGUP;
+ 709   3              CallOutTime = 2;
+ 710   3              return;
+ 711   3            }
+ 712   2            if(GsmStatus == GSM_ST_WAITHUNGUP)
+ 713   2            {
+ 714   3              return;
+ 715   3            }
+ 716   2            GSM_Huangup();
+ 717   2            MP3_StartPlay(MP3_Huangup);
+ 718   2            SysIdleCon();
+ 719   2            break;
+ 720   2          case 4://振铃
+ 721   2            //PA_PWR_L;
+ 722   2            //PrintString3("ATA\r\n");
+ 723   2            if(GsmStatus != GSM_ST_CALLIN)
+ 724   2            {
+ 725   3              GsmStatus = GSM_ST_CALLIN;
+ 726   3              //CallInTime = SysPara.RingInTs;
+ 727   3              if(SysPara.RingInTs == 1)
+ 728   3              {
+ 729   4                CallInTime = 2;
+ 730   4              }
+ 731   3              else
+ 732   3              {
+ 733   4                GSM_Huangup();
+ 734   4                MP3_StartPlay(MP3_Huangup);
+ 735   4              }
+ 736   3            }
+C51 COMPILER V9.57.0.0   GSM                                                               08/04/2022 14:16:58 PAGE 13  
 
- 737   2      //      {
- 738   2      //        PrintString3("ATA\r\n");
- 739   2      //        SysStatus = SYS_TALK;
- 740   2      //        GsmStatus = GSM_ST_TALK;
- 741   2      //        //CallOutTime = SysPara.TalkTime;
- 742   2      //        TalkTime = SysPara.TalkTime;
- 743   2      //        Volum = SysPara.TalkVolum;
- 744   2      //        GSM_SetVolum(Volum);
- 745   2      //        PA_PWR_L;
- 746   2      //      }
- 747   2            break;
- 748   2          case 5:
- 749   2            {
- 750   3              i = lookforstr(p,rspStrTable[5]);
- 751   3              if(i != -1)
- 752   3              {
- 753   4                p += i+strlen(rspStrTable[5]);
- 754   4                sscanf(p,"%bd,%bd,%bd",&i,&j,&stat);
- 755   4                printf("CLCC: %bd\r\n",stat);
- 756   4                
- 757   4                if(stat == 0)//接通
- 758   4                {
- 759   5                  SysStatus = SYS_TALK;
- 760   5                  GsmStatus = GSM_ST_TALK;
- 761   5                  //CallOutTime = SysPara.TalkTime;
- 762   5                  CallOutTime = 0;
- 763   5                  TalkTime = SysPara.TalkTime;
- 764   5                  Volum = SysPara.TalkVolum;
- 765   5                  GSM_SetVolum(Volum);
- 766   5                  PA_PWR_L;
- 767   5                }
- 768   4                else if(stat == 3)//呼叫通
- 769   4                {
- 770   5                  if(GsmCallOk == false)
- 771   5                  {
- 772   6                    GsmCallOk = true;
- 773   6                    CallOutTime = SysPara.RingOutTs;
- 774   6                  }
- 775   5                  //PA_PWR_L;
- 776   5                  if(++PaOpenTime == 5)
- 777   5                  {
- 778   6                    printf("\r\n----PaOpen----\r\n");
- 779   6                    PA_PWR_L;
- 780   6                  }
- 781   5                  //printf("PaT: %bd\r\n",PaOpenTime);
- 782   5                }
- 783   4                else if(stat == 6)//挂断
- 784   4                {
- 785   5                  if(GsmStatus == GSM_ST_WAITHUNGUP)
- 786   5                  {
- 787   6                    return;
- 788   6                  }
- 789   5                  GSM_Huangup();
- 790   5                  MP3_StartPlay(MP3_Huangup);
- 791   5                  SysIdleCon();
- 792   5                    
- 793   5                }
- 794   4                break;
- 795   4              }
- 796   3            }
- 797   2            break;
- 798   2          case 8:
-C51 COMPILER V9.57.0.0   GSM                                                               08/04/2022 09:22:01 PAGE 14  
+ 737   2      //      if(--CallInTime == 0)
+ 738   2      //      {
+ 739   2      //        PrintString3("ATA\r\n");
+ 740   2      //        SysStatus = SYS_TALK;
+ 741   2      //        GsmStatus = GSM_ST_TALK;
+ 742   2      //        //CallOutTime = SysPara.TalkTime;
+ 743   2      //        TalkTime = SysPara.TalkTime;
+ 744   2      //        Volum = SysPara.TalkVolum;
+ 745   2      //        GSM_SetVolum(Volum);
+ 746   2      //        PA_PWR_L;
+ 747   2      //      }
+ 748   2            break;
+ 749   2          case 5:
+ 750   2            {
+ 751   3              i = lookforstr(p,rspStrTable[5]);
+ 752   3              if(i != -1)
+ 753   3              {
+ 754   4                p += i+strlen(rspStrTable[5]);
+ 755   4                sscanf(p,"%bd,%bd,%bd",&i,&j,&stat);
+ 756   4                printf("CLCC: %bd\r\n",stat);
+ 757   4                
+ 758   4                if(stat == 0)//接通
+ 759   4                {
+ 760   5                  SysStatus = SYS_TALK;
+ 761   5                  GsmStatus = GSM_ST_TALK;
+ 762   5                  //CallOutTime = SysPara.TalkTime;
+ 763   5                  CallOutTime = 0;
+ 764   5                  TalkTime = SysPara.TalkTime;
+ 765   5                  Volum = SysPara.TalkVolum;
+ 766   5                  GSM_SetVolum(Volum);
+ 767   5                  PA_PWR_L;
+ 768   5                }
+ 769   4                else if(stat == 3)//呼叫通
+ 770   4                {
+ 771   5                  if(GsmCallOk == false)
+ 772   5                  {
+ 773   6                    GsmCallOk = true;
+ 774   6                    CallOutTime = SysPara.RingOutTs;
+ 775   6                  }
+ 776   5                  //PA_PWR_L;
+ 777   5                  if(++PaOpenTime == 5)
+ 778   5                  {
+ 779   6                    printf("\r\n----PaOpen----\r\n");
+ 780   6                    PA_PWR_L;
+ 781   6                  }
+ 782   5                  //printf("PaT: %bd\r\n",PaOpenTime);
+ 783   5                }
+ 784   4                else if(stat == 6)//挂断
+ 785   4                {
+ 786   5                  if(GsmStatus == GSM_ST_WAITHUNGUP)
+ 787   5                  {
+ 788   6                    return;
+ 789   6                  }
+ 790   5                  GSM_Huangup();
+ 791   5                  MP3_StartPlay(MP3_Huangup);
+ 792   5                  SysIdleCon();
+ 793   5                    
+ 794   5                }
+ 795   4                break;
+ 796   4              }
+ 797   3            }
+ 798   2            break;
+C51 COMPILER V9.57.0.0   GSM                                                               08/04/2022 14:16:58 PAGE 14  
 
- 799   2      //      SysStatus = SYS_TALK;
- 800   2      //      GsmStatus = GSM_ST_TALK;
- 801   2      //      //CallOutTime = SysPara.TalkTime;
- 802   2      //      TalkTime = SysPara.TalkTime;
- 803   2      //      Volum = SysPara.TalkVolum;
- 804   2      //      GSM_SetVolum(Volum);
- 805   2      //      PA_PWR_L;
- 806   2            break;
- 807   2          case 6:
- 808   2            {
- 809   3              i = lookforstr(p,rspStrTable[6]);
- 810   3              if(i != -1)
- 811   3              {
- 812   4                p += i+strlen(rspStrTable[6]);
- 813   4                sscanf(p,"%bd",&stat);
- 814   4                DtmfData = stat-48;
- 815   4                printf("DTMF: %bd\r\n",stat);
- 816   4                break;
- 817   4              }
- 818   3            }
- 819   2            break;
- 820   2          case 7:
- 821   2            {
- 822   3              i = lookforstr(p,rspStrTable[7]);
- 823   3              if(i != -1)
- 824   3              {
- 825   4                p += i+strlen(rspStrTable[7]);
- 826   4                sscanf(p,"%bd",&stat);
- 827   4                DtmfData = stat;
- 828   4                printf("DTMF: %bd\r\n",stat);
- 829   4                break;
- 830   4              }
- 831   3            }
- 832   2            break;
- 833   2          case 9:
- 834   2            {
- 835   3              i = lookforstr(p,(uint8_t *)rspStrTable[9]);
- 836   3              if(i != -1)
- 837   3              {
- 838   4                p += i+strlen((uint8_t *)rspStrTable[9]);
- 839   4                sscanf(p,"%bd",&stat);
- 840   4                DtmfData = stat-48;
- 841   4                printf("DTMF: %bd\r\n",DtmfData);
- 842   4                break;
- 843   4              }
- 844   3            }
- 845   2            break;
- 846   2      #ifdef SMS
+ 799   2          case 8:
+ 800   2      //      SysStatus = SYS_TALK;
+ 801   2      //      GsmStatus = GSM_ST_TALK;
+ 802   2      //      //CallOutTime = SysPara.TalkTime;
+ 803   2      //      TalkTime = SysPara.TalkTime;
+ 804   2      //      Volum = SysPara.TalkVolum;
+ 805   2      //      GSM_SetVolum(Volum);
+ 806   2      //      PA_PWR_L;
+ 807   2            break;
+ 808   2          case 6:
+ 809   2            {
+ 810   3              i = lookforstr(p,rspStrTable[6]);
+ 811   3              if(i != -1)
+ 812   3              {
+ 813   4                p += i+strlen(rspStrTable[6]);
+ 814   4                sscanf(p,"%bd",&stat);
+ 815   4                DtmfData = stat-48;
+ 816   4                printf("DTMF: %bd\r\n",stat);
+ 817   4                break;
+ 818   4              }
+ 819   3            }
+ 820   2            break;
+ 821   2          case 7:
+ 822   2            {
+ 823   3              i = lookforstr(p,rspStrTable[7]);
+ 824   3              if(i != -1)
+ 825   3              {
+ 826   4                p += i+strlen(rspStrTable[7]);
+ 827   4                sscanf(p,"%bd",&stat);
+ 828   4                DtmfData = stat;
+ 829   4                printf("DTMF: %bd\r\n",stat);
+ 830   4                break;
+ 831   4              }
+ 832   3            }
+ 833   2            break;
+ 834   2          case 9:
+ 835   2            {
+ 836   3              i = lookforstr(p,(uint8_t *)rspStrTable[9]);
+ 837   3              if(i != -1)
+ 838   3              {
+ 839   4                p += i+strlen((uint8_t *)rspStrTable[9]);
+ 840   4                sscanf(p,"%bd",&stat);
+ 841   4                DtmfData = stat-48;
+ 842   4                printf("DTMF: %bd\r\n",DtmfData);
+ 843   4                break;
+ 844   4              }
+ 845   3            }
+ 846   2            break;
+ 847   2      #ifdef SMS
                   case 10:
                     if(GsmStatus == GSM_ST_WAIT_SEND)
                     {
@@ -893,9 +894,9 @@ line level    source
                   case 11:
                     if(GsmStatus == GSM_ST_WAIT_SEND)
                     {
-                      SendSmsDone();
-C51 COMPILER V9.57.0.0   GSM                                                               08/04/2022 09:22:01 PAGE 15  
+C51 COMPILER V9.57.0.0   GSM                                                               08/04/2022 14:16:58 PAGE 15  
 
+                      SendSmsDone();
                     }
                     break;
                   case 12:
@@ -915,84 +916,84 @@ line level    source
                     }
                     break;
               #endif
- 880   2        }
- 881   1      }
- 882          
- 883          void GsmUARTCmd(unsigned char * buf,uint16_t len)
- 884          {
- 885   1        AtCmdRspType CmdRes;
- 886   1        buf[len] = 0;
- 887   1        if((GsmStatus == GSM_ST_WAITAT) && (AtCmdIdx < GSM_AT_COUNT))
- 888   1        {
- 889   2          if(AtCmdBuf[AtCmdIdx].p_atCmdCallBack != NULL)
- 890   2          {
- 891   3            CmdRes = AtCmdBuf[AtCmdIdx].p_atCmdCallBack(buf);
- 892   3            switch(CmdRes)
- 893   3            {
- 894   4              case AT_RSP_CONTINUE:
- 895   4              case AT_RSP_FUN_OVER:
- 896   4                AtCmdRetryTime = 0;
- 897   4                if((AtCmdIdx+1) < GSM_AT_COUNT)
- 898   4                {
- 899   5                  AtCmdIdx++;
- 900   5                  PrintString3(AtCmdBuf[AtCmdIdx].p_atCmdStr);
- 901   5                  GsmInitTime = 1000;
- 902   5                  printf("GSM_AtCmd:%bd - %bd\r\n",AtCmdIdx,AtCmdRetryTime);
- 903   5                }
- 904   4                else
- 905   4                {
- 906   5                  GsmInitTime = 10000;
- 907   5                  GsmStatus = GSM_ST_ATOVER;
- 908   5                  if(SysStatus == SYS_TALK)
- 909   5                  {
- 910   6                    GsmInitTime = 1000;
- 911   6                    GsmStatus = GSM_ST_TALK;
- 912   6                  }
- 913   5                }
- 914   4              #ifdef SMS
+ 881   2        }
+ 882   1      }
+ 883          
+ 884          void GsmUARTCmd(unsigned char * buf,uint16_t len)
+ 885          {
+ 886   1        AtCmdRspType CmdRes;
+ 887   1        buf[len] = 0;
+ 888   1        if((GsmStatus == GSM_ST_WAITAT) && (AtCmdIdx < GSM_AT_COUNT))
+ 889   1        {
+ 890   2          if(AtCmdBuf[AtCmdIdx].p_atCmdCallBack != NULL)
+ 891   2          {
+ 892   3            CmdRes = AtCmdBuf[AtCmdIdx].p_atCmdCallBack(buf);
+ 893   3            switch(CmdRes)
+ 894   3            {
+ 895   4              case AT_RSP_CONTINUE:
+ 896   4              case AT_RSP_FUN_OVER:
+ 897   4                AtCmdRetryTime = 0;
+ 898   4                if((AtCmdIdx+1) < GSM_AT_COUNT)
+ 899   4                {
+ 900   5                  AtCmdIdx++;
+ 901   5                  PrintString3(AtCmdBuf[AtCmdIdx].p_atCmdStr);
+ 902   5                  GsmInitTime = 1000;
+ 903   5                  printf("GSM_AtCmd:%bd - %bd\r\n",AtCmdIdx,AtCmdRetryTime);
+ 904   5                }
+ 905   4                else
+ 906   4                {
+ 907   5                  GsmInitTime = 10000;
+ 908   5                  GsmStatus = GSM_ST_ATOVER;
+ 909   5                  if(SysStatus == SYS_TALK)
+ 910   5                  {
+ 911   6                    GsmInitTime = 1000;
+ 912   6                    GsmStatus = GSM_ST_TALK;
+ 913   6                  }
+ 914   5                }
+ 915   4              #ifdef SMS
                         if((GsmStatus == GSM_ST_ATOVER) && (SmsLen > 0))
                         {
                           SendSmsStart();
                         }
                       #endif
- 920   4                break;
- 921   4              case AT_RSP_WAIT:
- 922   4                
-C51 COMPILER V9.57.0.0   GSM                                                               08/04/2022 09:22:01 PAGE 16  
+ 921   4                break;
+ 922   4              case AT_RSP_WAIT:
+C51 COMPILER V9.57.0.0   GSM                                                               08/04/2022 14:16:58 PAGE 16  
 
- 923   4                break;
- 924   4              case AT_RSP_ERROR:
- 925   4                if(SysStatus == SYS_TALK)
- 926   4                {
- 927   5                  GsmInitTime = 1000;
- 928   5                  GsmStatus = GSM_ST_TALK;
- 929   5                }
- 930   4                else
- 931   4                {
- 932   5                  GSM_Repower();
- 933   5                }
- 934   4                break;
- 935   4            }
- 936   3          }
- 937   2        }
- 938   1        else
- 939   1        {
- 940   2          ModemReceiveHandle(buf);
- 941   2        }
- 942   1      }
- 943          
- 944          void GSM_send_dtmf(uint8_t k)
- 945          {
- 946   1        uint8_t dtmf_cmd[]="AT+VTS=\"0\"\r\n";
- 947   1        dtmf_cmd[8] = k+'0';
- 948   1      //  uint8_t dtmf_cmd[]="AT+QWDTMF=1,0,\"1,2,3,A,B\",500\r\n";
- 949   1        //dtmf_cmd[8] = k+'0';
- 950   1        PrintString3(dtmf_cmd);
- 951   1      }
+ 923   4                
+ 924   4                break;
+ 925   4              case AT_RSP_ERROR:
+ 926   4                if(SysStatus == SYS_TALK)
+ 927   4                {
+ 928   5                  GsmInitTime = 1000;
+ 929   5                  GsmStatus = GSM_ST_TALK;
+ 930   5                }
+ 931   4                else
+ 932   4                {
+ 933   5                  GSM_Repower();
+ 934   5                }
+ 935   4                break;
+ 936   4            }
+ 937   3          }
+ 938   2        }
+ 939   1        else
+ 940   1        {
+ 941   2          ModemReceiveHandle(buf);
+ 942   2        }
+ 943   1      }
+ 944          
+ 945          void GSM_send_dtmf(uint8_t k)
+ 946          {
+ 947   1        uint8_t dtmf_cmd[]="AT+VTS=\"0\"\r\n";
+ 948   1        dtmf_cmd[8] = k+'0';
+ 949   1      //  uint8_t dtmf_cmd[]="AT+QWDTMF=1,0,\"1,2,3,A,B\",500\r\n";
+ 950   1        //dtmf_cmd[8] = k+'0';
+ 951   1        PrintString3(dtmf_cmd);
+ 952   1      }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =   3885    ----
+   CODE SIZE        =   3890    ----
    CONSTANT SIZE    =    811    ----
    XDATA SIZE       =     86      57
    PDATA SIZE       =   ----    ----

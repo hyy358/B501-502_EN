@@ -1,4 +1,4 @@
-C51 COMPILER V9.57.0.0   UART                                                              08/04/2022 09:22:02 PAGE 1   
+C51 COMPILER V9.57.0.0   UART                                                              08/04/2022 14:16:59 PAGE 1   
 
 
 C51 COMPILER V9.57.0.0, COMPILATION OF MODULE UART
@@ -62,7 +62,7 @@ line level    source
   52   3            j = 65536UL - j;
   53   3            if(COMx->UART_BRT_Use == BRT_Timer1)
   54   3            {
-C51 COMPILER V9.57.0.0   UART                                                              08/04/2022 09:22:02 PAGE 2   
+C51 COMPILER V9.57.0.0   UART                                                              08/04/2022 14:16:59 PAGE 2   
 
   55   4              TR1 = 0;
   56   4              AUXR &= ~0x01;    //S1 BRT Use Timer1;
@@ -126,7 +126,7 @@ line level    source
                     UART2_Polity(COMx->UART_Polity);  //指定中断优先级(低到高) Polity_0,Polity_1,Polity_2,Polity_3
                     if(COMx->UART_Mode == UART_9bit_BRTx) S2CON |=  (1<<7); //9bit
                     else                  S2CON &= ~(1<<7); //8bit
-C51 COMPILER V9.57.0.0   UART                                                              08/04/2022 09:22:02 PAGE 3   
+C51 COMPILER V9.57.0.0   UART                                                              08/04/2022 14:16:59 PAGE 3   
 
                     j = (MAIN_Fosc / 4) / COMx->UART_BaudRate;  //按1T计算
                     if(j >= 65536UL)  return 2; //错误
@@ -190,7 +190,7 @@ line level    source
  176   4            }
  177   3            else return 2;  //错误
  178   3          }
-C51 COMPILER V9.57.0.0   UART                                                              08/04/2022 09:22:02 PAGE 4   
+C51 COMPILER V9.57.0.0   UART                                                              08/04/2022 14:16:59 PAGE 4   
 
  179   2          else  return 2; //模式错误
  180   2          if(COMx->UART_Interrupt == ENABLE)  S3_Int_Enable();    //允许中断
@@ -254,7 +254,7 @@ line level    source
               #endif
  239   1        return  2;  //错误
  240   1      }
-C51 COMPILER V9.57.0.0   UART                                                              08/04/2022 09:22:02 PAGE 5   
+C51 COMPILER V9.57.0.0   UART                                                              08/04/2022 14:16:59 PAGE 5   
 
  241          
  242          /*********************************************************/
@@ -318,7 +318,7 @@ line level    source
                 TX2_Buffer[COM2.TX_write] = dat;  //装发送缓冲
                 if(++COM2.TX_write >= COM_TX2_Lenth)  COM2.TX_write = 0;
               
-C51 COMPILER V9.57.0.0   UART                                                              08/04/2022 09:22:02 PAGE 6   
+C51 COMPILER V9.57.0.0   UART                                                              08/04/2022 14:16:59 PAGE 6   
 
                 if(COM2.B_TX_busy == 0)   //空闲
                 {  
@@ -382,7 +382,7 @@ line level    source
  362          
  363          void UART3_int (void) interrupt UART3_VECTOR
  364          {
-C51 COMPILER V9.57.0.0   UART                                                              08/04/2022 09:22:02 PAGE 7   
+C51 COMPILER V9.57.0.0   UART                                                              08/04/2022 14:16:59 PAGE 7   
 
  365   1        if(RI3)
  366   1        {
@@ -446,7 +446,7 @@ line level    source
               }
               
               void UART4_int (void) interrupt UART4_VECTOR
-C51 COMPILER V9.57.0.0   UART                                                              08/04/2022 09:22:02 PAGE 8   
+C51 COMPILER V9.57.0.0   UART                                                              08/04/2022 14:16:59 PAGE 8   
 
               {
                 if(RI4)
@@ -510,7 +510,7 @@ line level    source
  485   2          {
  486   3            if(COM3.RX_Cnt >= 1)
  487   3            {
-C51 COMPILER V9.57.0.0   UART                                                              08/04/2022 09:22:02 PAGE 9   
+C51 COMPILER V9.57.0.0   UART                                                              08/04/2022 14:16:59 PAGE 9   
 
  488   4              COM3.B_RX_OK = 1;
  489   4            }

@@ -1,4 +1,4 @@
-C51 COMPILER V9.57.0.0   TIMER                                                             08/04/2022 09:22:02 PAGE 1   
+C51 COMPILER V9.57.0.0   TIMER                                                             08/04/2022 14:16:59 PAGE 1   
 
 
 C51 COMPILER V9.57.0.0, COMPILATION OF MODULE TIMER
@@ -62,7 +62,7 @@ line level    source
   52          {
   53   1      #ifdef PWM_AUDIO
   54   1        PWMtask();
-C51 COMPILER V9.57.0.0   TIMER                                                             08/04/2022 09:22:02 PAGE 2   
+C51 COMPILER V9.57.0.0   TIMER                                                             08/04/2022 14:16:59 PAGE 2   
 
   55   1      #endif
   56   1      }
@@ -126,7 +126,7 @@ line level    source
                 if(TIM == Timer2)   //Timer2,固定为16位自动重装, 中断无优先级
                 {
                   Timer2_Stop();  //停止计数
-C51 COMPILER V9.57.0.0   TIMER                                                             08/04/2022 09:22:02 PAGE 3   
+C51 COMPILER V9.57.0.0   TIMER                                                             08/04/2022 14:16:59 PAGE 3   
 
                   if(TIMx->TIM_Interrupt == ENABLE)   Timer2_InterruptEnable(); //允许中断
                   else    Timer2_InterruptDisable();  //禁止中断
@@ -190,7 +190,7 @@ MODULE INFORMATION:   STATIC OVERLAYABLE
    CONSTANT SIZE    =   ----    ----
    XDATA SIZE       =      1    ----
    PDATA SIZE       =   ----    ----
-C51 COMPILER V9.57.0.0   TIMER                                                             08/04/2022 09:22:02 PAGE 4   
+C51 COMPILER V9.57.0.0   TIMER                                                             08/04/2022 14:16:59 PAGE 4   
 
    DATA SIZE        =   ----    ----
    IDATA SIZE       =   ----    ----
