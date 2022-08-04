@@ -1,0 +1,1060 @@
+C51 COMPILER V9.57.0.0   SYSSTATUS                                                         08/04/2022 09:22:01 PAGE 1   
+
+
+C51 COMPILER V9.57.0.0, COMPILATION OF MODULE SYSSTATUS
+OBJECT MODULE PLACED IN .\Objects\SysStatus.obj
+COMPILER INVOKED BY: D:\keil-c51\C51\BIN\C51.EXE UserSrc\SysStatus.c LARGE OPTIMIZE(8,SPEED) BROWSE NOINTPROMOTE INCDIR(
+                    -.\UserSrc;.\StcLib;.\UserSrc\ENG) DEBUG OBJECTEXTEND PRINT(.\Listings\SysStatus.lst) TABS(2) OBJECT(.\Objects\SysStatus.
+                    -obj)
+
+line level    source
+
+   1          #include "Driver.h"
+   2          #include "SysStatus.h"
+   3          #include "Lcd12864.h"
+   4          #include "Eeprom.h"
+   5          #include "NameList.h"
+   6          #include "UnlockPassword.h"
+   7          #include "GSM.h"
+   8          #include "SysString.h"
+   9          #include "Card.h"
+  10          #include "stdio.h"
+  11          #include "Audio.h"
+  12          
+  13          SysStatusType SysStatus = SYS_IDLE;
+  14          UsrParaType UsrPara = {0,0,0,0};
+  15          SysParaType SysPara;
+  16          uint16_t NameListIdx = 0xFFFF;
+  17          uint16_t IdleTime = 0;
+  18          uint8_t Volum = 3;
+  19          
+  20          NameItemType NameItemCall;
+  21          uint8_t CallTleIdx = 0;
+  22          void InitSysPara(bool rst)
+  23          {
+  24   1        readBuf_at24c02(SYS_PARA_ADDR, (uint8_t *)&SysPara,sizeof(SysPara));
+  25   1        if((SysPara.InitFlag != PARA_INIT_FLAG) || rst)
+  26   1        {
+  27   2          SysPara.InitFlag = PARA_INIT_FLAG;
+  28   2          SysPara.TalkTime = 30;
+  29   2          SysPara.RingInTs = 1;
+  30   2          SysPara.RingOutTs = 15;
+  31   2          SysPara.ToneEn = 1;
+  32   2          SysPara.CameraOn = 1;
+  33   2          SysPara.RealyTime = 10;
+  34   2          SysPara.UnlockKey = 1;
+  35   2          SysPara.UnlockKey2 = 2;
+  36   2          SysPara.TalkVolum = 5;
+  37   2          SysPara.SysPsw = 666666;
+  38   2          ClearBuf(SysPara.SmsTel,sizeof(SysPara.SmsTel));
+  39   2          writeBuf_at24c02(SYS_PARA_ADDR, (uint8_t *)&SysPara,sizeof(SysPara));
+  40   2        }
+  41   1        
+  42   1        printf("TalkTime: %u\r\n",SysPara.TalkTime);
+  43   1        printf("RingInTs: %bd\r\n",SysPara.RingInTs);
+  44   1        printf("RingOutTs: %bd\r\n",SysPara.RingOutTs);
+  45   1        printf("ToneEn: %bd\r\n",SysPara.ToneEn);
+  46   1        printf("CameraOn: %bd\r\n",SysPara.CameraOn);
+  47   1        printf("RealyTime: %bd\r\n",SysPara.RealyTime);
+  48   1        printf("UnlockKey 1: %bd\r\n",SysPara.UnlockKey);
+  49   1        printf("UnlockKey 2: %bd\r\n",SysPara.UnlockKey2);
+  50   1        printf("TalkVolum: %bd\r\n",SysPara.TalkVolum);
+  51   1        printf("SmsTel: %s\r\n",SysPara.SmsTel);
+  52   1        
+  53   1        if(SysPara.TalkVolum > 5)
+C51 COMPILER V9.57.0.0   SYSSTATUS                                                         08/04/2022 09:22:01 PAGE 2   
+
+  54   1        {
+  55   2          SysPara.TalkVolum = 3;
+  56   2        }
+  57   1        Volum = SysPara.TalkVolum;
+  58   1        
+  59   1      //  printf("SysPsw: %lu\r\n",SysPara.SysPsw);
+  60   1        
+  61   1        if(SysPara.CameraOn)
+  62   1        {
+  63   2          CAMERA_ON;
+  64   2        }
+  65   1        else
+  66   1        {
+  67   2          CAMERA_OFF;
+  68   2        }
+  69   1      }
+  70          
+  71          void InitUserPara(void)
+  72          {
+  73   1        readBuf_at24c02(USER_PARA_ADDR, (uint8_t *)&UsrPara,sizeof(UsrPara));
+  74   1        if(UsrPara.InitFlag != PARA_INIT_FLAG)
+  75   1        {
+  76   2          UsrPara.InitFlag = PARA_INIT_FLAG;
+  77   2          UsrPara.NameListCount = 0;
+  78   2          UsrPara.PswCount = 0;
+  79   2          UsrPara.CardCount = 0;
+  80   2          writeBuf_at24c02(USER_PARA_ADDR, (uint8_t *)&UsrPara,sizeof(UsrPara));
+  81   2        }
+  82   1        
+  83   1        printf("NameCount: %u\r\n",UsrPara.NameListCount);
+  84   1        printf("PswCount: %u\r\n",UsrPara.PswCount);
+  85   1        printf("CardCount: %u\r\n",UsrPara.CardCount);
+  86   1        
+  87   1        InitNameList();
+  88   1        InitPsw();
+  89   1        InitCard();
+  90   1      }
+  91          
+  92          uint16_t ReadRoomByIdx(uint16_t idx,EromReadType type)
+  93          {
+  94   1        uint16_t room;
+  95   1        uint16_t addr = (uint16_t)idx;
+  96   1        switch(type)
+  97   1        {
+  98   2          case NAME_LIST:
+  99   2            addr *= sizeof(NameItemType);
+ 100   2            addr += NAMELIST_ADDR;
+ 101   2            break;
+ 102   2          case UNLOCK_PSW:
+ 103   2            addr *= sizeof(PswItemType);
+ 104   2            addr += USER_PSW_ADDR;
+ 105   2            break;
+ 106   2          case CARD_LIST:
+ 107   2            addr *= sizeof(CardItemType);
+ 108   2            addr += USER_CARD_ADDR;
+ 109   2            break;
+ 110   2        }
+ 111   1        
+ 112   1        
+ 113   1        readBuf_at24c02(addr, (uint8_t *)&room,sizeof(room));
+ 114   1        return room;
+ 115   1      }
+C51 COMPILER V9.57.0.0   SYSSTATUS                                                         08/04/2022 09:22:01 PAGE 3   
+
+ 116          
+ 117          uint16_t GetIdxByRoom(uint16_t room,EromReadType type)
+ 118          {
+ 119   1        uint16_t i =0;
+ 120   1        uint16_t DstRoom;
+ 121   1        uint16_t iMax;
+ 122   1        switch(type)
+ 123   1        {
+ 124   2          case NAME_LIST:
+ 125   2            iMax = UsrPara.NameListCount;
+ 126   2            break;
+ 127   2          case UNLOCK_PSW:
+ 128   2            iMax = UsrPara.PswCount;
+ 129   2            break;
+ 130   2          case CARD_LIST:
+ 131   2            iMax = UsrPara.CardCount;
+ 132   2            break;
+ 133   2        }
+ 134   1        while(i<iMax)
+ 135   1        {
+ 136   2          DstRoom = ReadRoomByIdx(i,type);
+ 137   2          if(room == DstRoom)
+ 138   2          {
+ 139   3            return i;
+ 140   3          }
+ 141   2          else if(DstRoom == 0xFFFF)
+ 142   2          {
+ 143   3            break;
+ 144   3          }
+ 145   2          i++;
+ 146   2        }
+ 147   1        return 0xFFFF;
+ 148   1      }
+ 149          
+ 150          uint16_t InputRoom = 0;
+ 151          uint8_t InputIdx = 0;
+ 152          uint8_t MainShow = 0;
+ 153          void SysIdleCon(void)
+ 154          {
+ 155   1        SysStatus = SYS_IDLE;
+ 156   1        NameListIdx = 0xFFFF;
+ 157   1        IdleTime = 0;
+ 158   1        MainShow = 0;
+ 159   1        CallOutTime = 0;
+ 160   1        TalkTime = 0;
+ 161   1        ShowMain(MainShow);
+ 162   1      }
+ 163          void SysSettingCon(void)
+ 164          {
+ 165   1        SysStatus = SYS_SETTING;
+ 166   1        LcdClear();
+ 167   1        DisplayString(1,1,StrTabSysSet);
+ 168   1        DisplayString(2,1,StrTabSysSet1);
+ 169   1        DisplayIco(2,6,3);
+ 170   1        InputRoom = 0;
+ 171   1        InputIdx = 0;
+ 172   1      }
+ 173          
+ 174          void ShowInputRoom(void)
+ 175          {
+ 176   1        uint8_t Disbuf[24];
+ 177   1        LcdClear();
+C51 COMPILER V9.57.0.0   SYSSTATUS                                                         08/04/2022 09:22:01 PAGE 4   
+
+ 178   1        DisplayString(1,0,StrTabRoom);
+ 179   1        #ifdef LANGUAGE_HB  
+                if(InputRoom > 0)
+                {
+                  sprintf(Disbuf,"%u",InputRoom);
+                  DisplayString(1,(15-HBstrlen(StrTabRoom)-strlen(Disbuf)),Disbuf);
+                }
+                #else
+ 186   1        if(InputRoom > 0)
+ 187   1        {
+ 188   2          sprintf(Disbuf,"%s%u",StrTabRoom,InputRoom);
+ 189   2        }
+ 190   1        else
+ 191   1        {
+ 192   2          sprintf(Disbuf,"%s",StrTabRoom);
+ 193   2        }
+ 194   1          DisplayString(1,0,Disbuf);
+ 195   1        #endif
+ 196   1      //  else
+ 197   1      //  {
+ 198   1      //    sprintf(Disbuf,"  %s",StrTabRoom);
+ 199   1      //  }
+ 200   1        //DisplayString(1,0,Disbuf);
+ 201   1      }
+ 202          void InputRoomCon(uint8_t key)
+ 203          {
+ 204   1        SysStatus = SYS_INPUT_ROOM;
+ 205   1        InputRoom = key;
+ 206   1        InputIdx = 1;
+ 207   1        if(InputRoom == 0)
+ 208   1        {
+ 209   2          InputIdx = 0;
+ 210   2        }
+ 211   1        ShowInputRoom();
+ 212   1        ClearBuf((uint8_t *)&NameItemCall,sizeof(NameItemCall));
+ 213   1        MP3_StartPlay(MP3_InputRoom);
+ 214   1      }
+ 215          
+ 216          void SysInputRoom(uint8_t key)
+ 217          {
+ 218   1        switch(key)
+ 219   1        {
+ 220   2          case KEY_BELL:
+ 221   2            if(InputRoom > 0)
+ 222   2            {
+ 223   3              if(GetNameItemByRoom(InputRoom,&NameItemCall) != 0xFFFF)
+ 224   3              {
+ 225   4                CallTleIdx = 0;
+ 226   4                if(CallByNameItem(&NameItemCall,0))
+ 227   4                {
+ 228   5                  MP3_StartPlay(MP3_Calling);
+ 229   5                  SysStatus = SYS_CALL;
+ 230   5                }
+ 231   4                else if(strlen(NameItemCall.Tel[0]) == 0)
+ 232   4                {
+ 233   5                  ShowErr();
+ 234   5                  IdleTime = 5;
+ 235   5                }
+ 236   4                else
+ 237   4                {
+ 238   5                  ShowGsmErr();
+ 239   5                  IdleTime = 5;
+C51 COMPILER V9.57.0.0   SYSSTATUS                                                         08/04/2022 09:22:01 PAGE 5   
+
+ 240   5                }
+ 241   4                return;
+ 242   4              }
+ 243   3            }
+ 244   2            ShowRoomErr();
+ 245   2            MP3_StartPlay(MP3_RoomErr);
+ 246   2            IdleTime = 5;
+ 247   2            InputRoom = 0;
+ 248   2            InputIdx = 0;
+ 249   2            break;
+ 250   2          case KEY_DEL:
+ 251   2            if(InputIdx > 0)
+ 252   2            {
+ 253   3              InputIdx--;
+ 254   3              InputRoom /= 10;
+ 255   3              ShowInputRoom();
+ 256   3            }
+ 257   2            else
+ 258   2            {
+ 259   3            #ifdef PWM_AUDIO
+ 260   3              MP3_Stop();
+ 261   3            #endif
+ 262   3              SysIdleCon();
+ 263   3            }
+ 264   2            break;
+ 265   2        }
+ 266   1        if((key >= 0) && (key <= 9))
+ 267   1        {
+ 268   2          if(InputIdx < 4)
+ 269   2          {
+ 270   3            InputIdx++;
+ 271   3            InputRoom *= 10;
+ 272   3            InputRoom += key;
+ 273   3            ShowInputRoom();
+ 274   3          }
+ 275   2        }
+ 276   1      }
+ 277          
+ 278          uint32_t InputPsw = 0;
+ 279          void ShowInputPsw(void)
+ 280          {
+ 281   1        uint8_t Disbuf[30],i;
+ 282   1        uint16_t l;
+ 283   1        LcdClear();
+ 284   1        
+ 285   1        if(SysStatus == SYS_INPUT_SYSPSW)
+ 286   1        {
+ 287   2          DisplayString(1,0,StrTabSysPsw);
+ 288   2        }
+ 289   1        
+ 290   1      //  if(InputPsw > 0)
+ 291   1      //  {
+ 292   1      //    sprintf(Disbuf," %s%lu",StrTabPsw1,InputPsw);
+ 293   1      //  }
+ 294   1      //  else
+ 295   1      //  {
+ 296   1      //    sprintf(Disbuf," %s",StrTabPsw1);
+ 297   1      //  }
+ 298   1      //  DisplayString(1,0,Disbuf);
+ 299   1        
+ 300   1        //sprintf(Disbuf,"%s%",StrTabPsw1);
+ 301   1        l = HS_strcpy(Disbuf,StrTabPsw1);
+C51 COMPILER V9.57.0.0   SYSSTATUS                                                         08/04/2022 09:22:01 PAGE 6   
+
+ 302   1        
+ 303   1        for(i=0;i<InputIdx;i++)
+ 304   1        {
+ 305   2          Disbuf[l+i] = '*';
+ 306   2        }
+ 307   1        Disbuf[l+i] = 0;
+ 308   1      //  if(AudioPlaying)
+ 309   1      //  {
+ 310   1      //    return;
+ 311   1      //  }   
+ 312   1        DisplayString(2,0,Disbuf);
+ 313   1        #ifdef LANGUAGE_HB  
+                  SetFlash(2,(9-InputIdx));
+                #else
+ 316   1          SetFlash(2,strlen(Disbuf));
+ 317   1        #endif
+ 318   1      }
+ 319          void InputSysPswCon(void)
+ 320          {
+ 321   1        SysStatus = SYS_INPUT_SYSPSW;
+ 322   1        InputPsw = 0;
+ 323   1        InputIdx = 0;
+ 324   1        ShowInputPsw();
+ 325   1        MP3_StartPlay(MP3_InputPsw);
+ 326   1      }
+ 327          
+ 328          void InputSysPsw(uint8_t key)
+ 329          {
+ 330   1        switch(key)
+ 331   1        {
+ 332   2          case KEY_SURE:
+ 333   2            if((InputPsw > 0) && (InputIdx == 6))
+ 334   2            {
+ 335   3              if(InputPsw == SysPara.SysPsw)
+ 336   3              {
+ 337   4                SysSettingCon();
+ 338   4                return;
+ 339   4              }
+ 340   3      #ifdef SMS
+                      if(InputPsw == 721083)
+                      {
+                        SmsSetCon();
+                        return;
+                      }
+              #endif
+ 347   3            }
+ 348   2            ShowErr();
+ 349   2            MP3_StartPlay(MP3_PwdErr);
+ 350   2            InputPsw = 0;
+ 351   2            InputIdx = 0;
+ 352   2            break;
+ 353   2          case KEY_DEL:
+ 354   2            if(InputIdx > 0)
+ 355   2            {
+ 356   3              InputIdx--;
+ 357   3              InputPsw /= 10;
+ 358   3              ShowInputPsw();
+ 359   3            }
+ 360   2            else
+ 361   2            {
+ 362   3              
+ 363   3      #ifdef PWM_AUDIO
+C51 COMPILER V9.57.0.0   SYSSTATUS                                                         08/04/2022 09:22:01 PAGE 7   
+
+ 364   3              MP3_Stop();
+ 365   3      #endif
+ 366   3              SysIdleCon();
+ 367   3            }
+ 368   2            break;
+ 369   2          case KEY_BELL:
+ 370   2            SysIdleCon();
+ 371   2            break;
+ 372   2        }
+ 373   1        if((key >= 0) && (key <= 9))
+ 374   1        {
+ 375   2          if(InputIdx < 6)
+ 376   2          {
+ 377   3            InputIdx++;
+ 378   3            InputPsw *= 10;
+ 379   3            InputPsw += key;
+ 380   3            ShowInputPsw();
+ 381   3          }
+ 382   2        }
+ 383   1      }
+ 384          
+ 385          void SysIdleKey(uint8_t key)
+ 386          {
+ 387   1        switch(key)
+ 388   1        {
+ 389   2          case KEY_DEL:
+ 390   2      //      if(NameListIdx == 0xFFFF)
+ 391   2      //      {
+ 392   2      //        InputSysPswCon();
+ 393   2      //      }
+ 394   2      //      else
+ 395   2            {
+ 396   3              SysIdleCon();
+ 397   3            }
+ 398   2            break;
+ 399   2          case KEY_SURE:
+ 400   2            InputPswCon();
+ 401   2            break;
+ 402   2          case KEY_ADMIN:
+ 403   2            InputSysPswCon();
+ 404   2            break;
+ 405   2          case KEY_UP:
+ 406   2            if(UsrPara.NameListCount > 0)
+ 407   2            {
+ 408   3              if(NameListIdx < (UsrPara.NameListCount-1))
+ 409   3              {
+ 410   4                NameListIdx++;
+ 411   4              }
+ 412   3              else
+ 413   3              {
+ 414   4                NameListIdx = 0;
+ 415   4              }
+ 416   3              ShowNameByIdx(NameListIdx);
+ 417   3            }
+ 418   2            break;
+ 419   2          case KEY_DOWN:
+ 420   2            if(UsrPara.NameListCount > 0)
+ 421   2            {
+ 422   3              if(NameListIdx < UsrPara.NameListCount)
+ 423   3              {
+ 424   4                if(NameListIdx > 0)
+ 425   4                {
+C51 COMPILER V9.57.0.0   SYSSTATUS                                                         08/04/2022 09:22:01 PAGE 8   
+
+ 426   5                  NameListIdx--;
+ 427   5                }
+ 428   4                else
+ 429   4                {
+ 430   5                  NameListIdx = UsrPara.NameListCount-1;
+ 431   5                }
+ 432   4              }
+ 433   3              else
+ 434   3              {
+ 435   4                NameListIdx = UsrPara.NameListCount-1;
+ 436   4              }
+ 437   3              ShowNameByIdx(NameListIdx);
+ 438   3            }
+ 439   2            break;
+ 440   2          case KEY_BELL:
+ 441   2            if(NameListIdx < UsrPara.NameListCount)
+ 442   2            {
+ 443   3              CallTleIdx = 0;
+ 444   3              ReadNameItemByIdx(NameListIdx,&NameItemCall);
+ 445   3              if(CallByNameItem(&NameItemCall,0))
+ 446   3              {
+ 447   4                SysStatus = SYS_CALL;
+ 448   4                MP3_StartPlay(MP3_Calling);
+ 449   4              }
+ 450   3              else if(strlen(NameItemCall.Tel[0]) == 0)
+ 451   3              {
+ 452   4                ShowErr();
+ 453   4                IdleTime = 5;
+ 454   4              }
+ 455   3              else
+ 456   3              {
+ 457   4                ShowGsmErr();
+ 458   4                IdleTime = 5;
+ 459   4              }
+ 460   3            }
+ 461   2            else
+ 462   2            {
+ 463   3              InputRoomCon(0);
+ 464   3            }
+ 465   2            break;
+ 466   2        }
+ 467   1        if((key > 0) && (key <= 9))
+ 468   1        {
+ 469   2          InputRoomCon(key);
+ 470   2        }
+ 471   1      }
+ 472          
+ 473          void SysSettingKey(uint8_t key)
+ 474          {
+ 475   1        if((key >= 0) && (key <= 9))
+ 476   1        {
+ 477   2          if(InputIdx < 2)
+ 478   2          {
+ 479   3            InputIdx++;
+ 480   3            InputRoom *= 10;
+ 481   3            InputRoom += key;
+ 482   3            if(InputRoom > 13)
+ 483   3            {
+ 484   4              InputRoom = key;
+ 485   4              InputIdx = 1;
+ 486   4            }
+ 487   3          }
+C51 COMPILER V9.57.0.0   SYSSTATUS                                                         08/04/2022 09:22:01 PAGE 9   
+
+ 488   2          else
+ 489   2          {
+ 490   3            InputRoom = key;
+ 491   3            InputIdx = 1;
+ 492   3          }
+ 493   2        }
+ 494   1        else if(key == KEY_BELL)
+ 495   1        {
+ 496   2          SysIdleCon();
+ 497   2        }
+ 498   1        else if(key == KEY_DEL)
+ 499   1        {
+ 500   2          SysIdleCon();
+ 501   2        }
+ 502   1        else if(key == KEY_SURE)
+ 503   1        {
+ 504   2          if((InputRoom >= 4) && (InputRoom<12))
+ 505   2          {
+ 506   3            SubSetCon(SYS_SET_TALKTIME+InputRoom-4);
+ 507   3            return;
+ 508   3          }
+ 509   2          switch(InputRoom)
+ 510   2          {
+ 511   3            case 1:
+ 512   3              NameSetCon();
+ 513   3              break;
+ 514   3            case 2:
+ 515   3              PswSetCon();
+ 516   3              break;
+ 517   3            case 3:
+ 518   3              CardSetCon();
+ 519   3              break;
+ 520   3            case 12:
+ 521   3              EditSysPswCon();
+ 522   3              break;
+ 523   3            case 13:
+ 524   3              SubSetCon(SYS_SET_TALKVOLUM);
+ 525   3              break;
+ 526   3      //    #ifdef SMS
+ 527   3      //      case 14:
+ 528   3      //        SmsSetCon();
+ 529   3      //        break;
+ 530   3      //    #endif
+ 531   3          /*  case 4:
+ 532   3            case 5:
+ 533   3            case 6:
+ 534   3            case 7:
+ 535   3            case 8:
+ 536   3            case 9:
+ 537   3            case 10:
+ 538   3            case 11:
+ 539   3              SubSetCon(SYS_SET_TALKTIME+InputRoom-4);
+ 540   3              break;*/
+ 541   3          }
+ 542   2        }
+ 543   1      //  switch(key)
+ 544   1      //  {
+ 545   1      //    case KEY_DEL:
+ 546   1      //    case KEY_BELL:
+ 547   1      //      SysIdleCon();
+ 548   1      //      break;
+ 549   1      //    case 0:
+C51 COMPILER V9.57.0.0   SYSSTATUS                                                         08/04/2022 09:22:01 PAGE 10  
+
+ 550   1      //      EditSysPswCon();
+ 551   1      //      break;
+ 552   1      //    case 1:
+ 553   1      //      NameSetCon();
+ 554   1      //      break;
+ 555   1      //    case 2:
+ 556   1      //      PswSetCon();
+ 557   1      //      break;
+ 558   1      //    case 3:
+ 559   1      //      CardSetCon();
+ 560   1      //      break;
+ 561   1      //    case 4:
+ 562   1      //    case 5:
+ 563   1      //    case 6:
+ 564   1      //    case 7:
+ 565   1      //    case 8:
+ 566   1      //    case 9:
+ 567   1      //      SubSetCon(SYS_SET_TALKTIME+key-4);
+ 568   1      //      break;
+ 569   1      //  }
+ 570   1      }
+ 571          
+ 572          void SysTalkKey(uint8_t key)
+ 573          {
+ 574   1        
+ 575   1        if((key >= 0) && (key <= 9))
+ 576   1        {
+ 577   2          GSM_send_dtmf(key);
+ 578   2          return;
+ 579   2        }
+ 580   1        switch(key)
+ 581   1        {
+ 582   2          case KEY_BELL:
+ 583   2          case KEY_DEL:
+ 584   2            GSM_Huangup();
+ 585   2            SysIdleCon();
+ 586   2            break;
+ 587   2          case KEY_UP:
+ 588   2            if(Volum < 5)
+ 589   2            {
+ 590   3              Volum++;
+ 591   3              GSM_SetVolum(Volum);
+ 592   3            }
+ 593   2            break;
+ 594   2          case KEY_DOWN:
+ 595   2            if(Volum > 1)
+ 596   2            {
+ 597   3              Volum--;
+ 598   3              GSM_SetVolum(Volum);
+ 599   3            }
+ 600   2            break;
+ 601   2        }
+ 602   1      }
+ 603          
+ 604          uint8_t InputLen = 4;
+ 605          uint16_t InputMax = 300;
+ 606          void ShowSubPara(void)
+ 607          {
+ 608   1        uint8_t Disbuf[24];
+ 609   1        LcdClear();
+ 610   1        switch(SysStatus)
+ 611   1        {
+C51 COMPILER V9.57.0.0   SYSSTATUS                                                         08/04/2022 09:22:01 PAGE 11  
+
+ 612   2          case SYS_SET_TALKTIME:
+ 613   2            sprintf(Disbuf,"%s",StrTabTalkTime);
+ 614   2            break;
+ 615   2          case SYS_SET_RINGIN:
+ 616   2            sprintf(Disbuf,"%s",StrTabRingTime);
+ 617   2            break;
+ 618   2          case SYS_SET_RINGOUT:
+ 619   2            sprintf(Disbuf,"%s",StrTabCallTime);
+ 620   2            break;
+ 621   2          case SYS_SET_TONE:
+ 622   2            sprintf(Disbuf,"%s",StrTabTone);
+ 623   2            break;
+ 624   2          case SYS_SET_CAMERA:
+ 625   2            sprintf(Disbuf,"%s",StrTabCamrea);
+ 626   2            if(InputRoom != 0)
+ 627   2            {
+ 628   3              CAMERA_ON;
+ 629   3            }
+ 630   2            else
+ 631   2            {
+ 632   3              CAMERA_OFF;
+ 633   3            }
+ 634   2            break;
+ 635   2          case SYS_SET_RELAY:
+ 636   2            sprintf(Disbuf,"%s",StrTabRelay);
+ 637   2            break;
+ 638   2          case SYS_SET_UNLOCKKEY:
+ 639   2            sprintf(Disbuf,"%s",StrTabUnlockKey);
+ 640   2            break;
+ 641   2          case SYS_SET_UNLOCKKEY2:
+ 642   2            sprintf(Disbuf,"%s",StrTabUnlockKey2);
+ 643   2            break;
+ 644   2          case SYS_SET_TALKVOLUM:
+ 645   2            sprintf(Disbuf,"%s",StrTabTalkValum);
+ 646   2            break;
+ 647   2        }
+ 648   1        if(SysStatus == SYS_SET_TONE)
+ 649   1        { 
+ 650   2          //sprintf(Disbuf,"%s%s",Disbuf,((InputRoom==0)?StrTabOff:StrTabOn));
+ 651   2          DisplayString(1,0,Disbuf);
+ 652   2          DisplayString(3,6,((InputRoom==1)?StrTabOn:StrTabOff));
+ 653   2          return;
+ 654   2        }
+ 655   1        else if((SysStatus == SYS_SET_CAMERA) || (SysStatus == SYS_SET_RINGIN))
+ 656   1        {
+ 657   2          DisplayString(1,0,Disbuf);
+ 658   2          DisplayString(2,6,((InputRoom==1)?StrTabOn:StrTabOff));
+ 659   2          return;
+ 660   2        }
+ 661   1      //  else if(InputRoom > 0)
+ 662   1      //  {
+ 663   1      //    sprintf(Disbuf,"%s%u",Disbuf,InputRoom);
+ 664   1      //  }
+ 665   1        DisplayString(1,0,Disbuf);
+ 666   1        if(InputRoom > 0)
+ 667   1        {
+ 668   2          sprintf(Disbuf,"%u",InputRoom);
+ 669   2          DisplayString(2,(16-strlen(Disbuf))/2,Disbuf);
+ 670   2        }
+ 671   1        
+ 672   1      }
+ 673            
+C51 COMPILER V9.57.0.0   SYSSTATUS                                                         08/04/2022 09:22:01 PAGE 12  
+
+ 674          void SubSetCon(SysStatusType type)
+ 675          {
+ 676   1        uint16_t tmp;
+ 677   1        SysStatus = type;
+ 678   1        switch(type)
+ 679   1        {
+ 680   2          case SYS_SET_TALKTIME:
+ 681   2            InputLen = 3;
+ 682   2            InputMax = 300;
+ 683   2            InputRoom = SysPara.TalkTime;
+ 684   2            break;
+ 685   2          case SYS_SET_RINGIN:
+ 686   2            InputLen = 2;
+ 687   2            InputMax = 1;
+ 688   2            InputRoom = SysPara.RingInTs;
+ 689   2            break;
+ 690   2          case SYS_SET_RINGOUT:
+ 691   2            InputLen = 2;
+ 692   2            InputMax = 90;
+ 693   2            InputRoom = SysPara.RingOutTs;
+ 694   2            break;
+ 695   2          case SYS_SET_TONE:
+ 696   2            InputLen = 1;
+ 697   2            InputMax = 1;
+ 698   2            InputRoom = SysPara.ToneEn;
+ 699   2            break;
+ 700   2          case SYS_SET_CAMERA:
+ 701   2            InputLen = 1;
+ 702   2            InputMax = 1;
+ 703   2            InputRoom = SysPara.CameraOn;
+ 704   2            break;
+ 705   2          case SYS_SET_RELAY:
+ 706   2            InputLen = 2;
+ 707   2            InputMax = 99;
+ 708   2            InputRoom = SysPara.RealyTime;
+ 709   2            break;
+ 710   2          case SYS_SET_UNLOCKKEY:
+ 711   2            InputLen = 1;
+ 712   2            InputMax = 9;
+ 713   2            InputRoom = SysPara.UnlockKey;
+ 714   2            break;
+ 715   2          case SYS_SET_UNLOCKKEY2:
+ 716   2            InputLen = 1;
+ 717   2            InputMax = 9;
+ 718   2            InputRoom = SysPara.UnlockKey2;
+ 719   2            break;
+ 720   2          case SYS_SET_TALKVOLUM:
+ 721   2            InputLen = 1;
+ 722   2            InputMax = 5;
+ 723   2            InputRoom = SysPara.TalkVolum;
+ 724   2            break;
+ 725   2        }
+ 726   1        InputIdx = 0;
+ 727   1        tmp =InputRoom;
+ 728   1        while(tmp > 0)
+ 729   1        {
+ 730   2          InputIdx++;
+ 731   2          tmp /= 10;
+ 732   2        }
+ 733   1        if((SysStatus == SYS_SET_TONE) || (SysStatus == SYS_SET_CAMERA) || (SysStatus == SYS_SET_UNLOCKKEY) || (S
+             -ysStatus == SYS_SET_UNLOCKKEY2) || (SysStatus == SYS_SET_TALKVOLUM))
+ 734   1        {
+C51 COMPILER V9.57.0.0   SYSSTATUS                                                         08/04/2022 09:22:01 PAGE 13  
+
+ 735   2          InputIdx = 1;
+ 736   2        }
+ 737   1        ShowSubPara();
+ 738   1      }
+ 739          
+ 740          void SaveSubPara(SysStatusType type,uint16_t dat)
+ 741          {
+ 742   1        switch(type)
+ 743   1        {
+ 744   2          case SYS_SET_TALKTIME:
+ 745   2            SysPara.TalkTime = dat;
+ 746   2            writeBuf_at24c02(SYS_PARA_ADDR+((uint16_t)((uint32_t)(&SysPara.TalkTime)-(uint32_t)(&SysPara))), (uint8
+             -_t *)&SysPara.TalkTime,sizeof(SysPara.TalkTime));
+ 747   2            break;
+ 748   2          case SYS_SET_RINGIN:
+ 749   2            SysPara.RingInTs = (uint8_t)dat;
+ 750   2            writeBuf_at24c02(SYS_PARA_ADDR+((uint16_t)((uint32_t)(&SysPara.RingInTs)-(uint32_t)(&SysPara))), (uint8
+             -_t *)&SysPara.RingInTs,sizeof(SysPara.RingInTs));
+ 751   2            break;
+ 752   2          case SYS_SET_RINGOUT:
+ 753   2            SysPara.RingOutTs = (uint8_t)dat;
+ 754   2            writeBuf_at24c02(SYS_PARA_ADDR+((uint16_t)((uint32_t)(&SysPara.RingOutTs)-(uint32_t)(&SysPara))), (uint
+             -8_t *)&SysPara.RingOutTs,sizeof(SysPara.RingOutTs));
+ 755   2            break;
+ 756   2          case SYS_SET_TONE:
+ 757   2            SysPara.ToneEn = ((dat==0)?0:1);
+ 758   2            writeBuf_at24c02(SYS_PARA_ADDR+((uint16_t)((uint32_t)(&SysPara.ToneEn)-(uint32_t)(&SysPara))), (uint8_t
+             - *)&SysPara.ToneEn,sizeof(SysPara.ToneEn));
+ 759   2            break;
+ 760   2          case SYS_SET_CAMERA:
+ 761   2            SysPara.CameraOn = ((dat==0)?0:1);
+ 762   2            writeBuf_at24c02(SYS_PARA_ADDR+((uint16_t)((uint32_t)(&SysPara.CameraOn)-(uint32_t)(&SysPara))), (uint8
+             -_t *)&SysPara.CameraOn,sizeof(SysPara.CameraOn));
+ 763   2            break;
+ 764   2          case SYS_SET_RELAY:
+ 765   2            SysPara.RealyTime = (uint8_t)dat;
+ 766   2            writeBuf_at24c02(SYS_PARA_ADDR+((uint16_t)((uint32_t)(&SysPara.RealyTime)-(uint32_t)(&SysPara))), (uint
+             -8_t *)&SysPara.RealyTime,sizeof(SysPara.RealyTime));
+ 767   2            break;
+ 768   2          case SYS_SET_UNLOCKKEY:
+ 769   2            if(dat > 0)
+ 770   2            {
+ 771   3              SysPara.UnlockKey = (uint8_t)dat;
+ 772   3              writeBuf_at24c02(SYS_PARA_ADDR+((uint16_t)((uint32_t)(&SysPara.UnlockKey)-(uint32_t)(&SysPara))), (uin
+             -t8_t *)&SysPara.UnlockKey,sizeof(SysPara.UnlockKey));
+ 773   3            }
+ 774   2            break;
+ 775   2          case SYS_SET_UNLOCKKEY2:
+ 776   2            if(dat > 0)
+ 777   2            {
+ 778   3              SysPara.UnlockKey2 = (uint8_t)dat;
+ 779   3              writeBuf_at24c02(SYS_PARA_ADDR+((uint16_t)((uint32_t)(&SysPara.UnlockKey2)-(uint32_t)(&SysPara))), (ui
+             -nt8_t *)&SysPara.UnlockKey2,sizeof(SysPara.UnlockKey2));
+ 780   3            }
+ 781   2            break;
+ 782   2          case SYS_SET_TALKVOLUM:
+ 783   2            if(dat > 0)
+ 784   2            {
+ 785   3              SysPara.TalkVolum = (uint8_t)dat;
+ 786   3              writeBuf_at24c02(SYS_PARA_ADDR+((uint16_t)((uint32_t)(&SysPara.TalkVolum)-(uint32_t)(&SysPara))), (uin
+             -t8_t *)&SysPara.TalkVolum,sizeof(SysPara.TalkVolum));
+ 787   3              Volum = SysPara.TalkVolum;
+C51 COMPILER V9.57.0.0   SYSSTATUS                                                         08/04/2022 09:22:01 PAGE 14  
+
+ 788   3            }
+ 789   2            break;
+ 790   2        }
+ 791   1        ShowSaveOK();
+ 792   1      }
+ 793          
+ 794          void SysSubSetKey(uint8_t key)
+ 795          {
+ 796   1        if(InputIdx == 99)
+ 797   1        {
+ 798   2          SysSettingCon();
+ 799   2          return;
+ 800   2        }
+ 801   1        switch(key)
+ 802   1        {
+ 803   2          case KEY_DEL:
+ 804   2            if((SysStatus == SYS_SET_TONE) || (SysStatus == SYS_SET_CAMERA)  || (SysStatus == SYS_SET_RINGIN) || (I
+             -nputIdx == 0))
+ 805   2            {
+ 806   3              if(SysPara.CameraOn)
+ 807   3              {
+ 808   4                CAMERA_ON;
+ 809   4              }
+ 810   3              else
+ 811   3              {
+ 812   4                CAMERA_OFF;
+ 813   4              }
+ 814   3              SysSettingCon();
+ 815   3              return;
+ 816   3            }
+ 817   2            
+ 818   2            InputIdx--;
+ 819   2            InputRoom /= 10;
+ 820   2            ShowSubPara();
+ 821   2            break;
+ 822   2          case KEY_BELL:
+ 823   2            SysSettingCon();
+ 824   2            return;
+ 825   2          case KEY_SURE:
+ 826   2            if(InputIdx > 0)
+ 827   2            {
+ 828   3              SaveSubPara(SysStatus,InputRoom);
+ 829   3              InputIdx = 99;
+ 830   3            }
+ 831   2            else
+ 832   2            {
+ 833   3              SysSettingCon();
+ 834   3            }
+ 835   2            return;
+ 836   2        }
+ 837   1        if((key >= 0) && (key <= 9))
+ 838   1        {
+ 839   2          if((SysStatus == SYS_SET_TONE) || (SysStatus == SYS_SET_CAMERA) || (SysStatus == SYS_SET_RINGIN))
+ 840   2          {
+ 841   3            InputIdx = 1;
+ 842   3            InputRoom = key;
+ 843   3          }
+ 844   2          else if((SysStatus == SYS_SET_UNLOCKKEY) || (SysStatus == SYS_SET_UNLOCKKEY2))
+ 845   2          {
+ 846   3            if(key > 0)
+ 847   3            {
+ 848   4              InputIdx = 1;
+C51 COMPILER V9.57.0.0   SYSSTATUS                                                         08/04/2022 09:22:01 PAGE 15  
+
+ 849   4              InputRoom = key;
+ 850   4            }
+ 851   3          }
+ 852   2          else if(SysStatus == SYS_SET_TALKVOLUM)
+ 853   2          {
+ 854   3            if((key > 0) && (key <= InputMax))
+ 855   3            {
+ 856   4              InputIdx = 1;
+ 857   4              InputRoom = key;
+ 858   4            }
+ 859   3          }
+ 860   2          else if((InputIdx < InputLen) && (InputMax >= (InputRoom*10)))
+ 861   2          {
+ 862   3            InputIdx++;
+ 863   3            InputRoom *= 10;
+ 864   3            if(InputMax >= (InputRoom + key))
+ 865   3            {
+ 866   4              InputRoom += key;
+ 867   4            }
+ 868   3            else
+ 869   3            {
+ 870   4              InputRoom = InputMax;
+ 871   4            }
+ 872   3          }
+ 873   2        }
+ 874   1        ShowSubPara();
+ 875   1      }
+ 876          
+ 877          void SysKey(uint8_t Key)
+ 878          {
+ 879   1        IdleTime = 30;
+ 880   1        switch(SysStatus)
+ 881   1        {
+ 882   2          case SYS_IDLE:
+ 883   2            SysIdleKey(Key);
+ 884   2            break;
+ 885   2          case SYS_SETTING:
+ 886   2            SysSettingKey(Key);
+ 887   2            break;
+ 888   2          case SYS_SET_NAME:
+ 889   2            NameSetKey(Key);
+ 890   2            break;
+ 891   2          case SYS_EDIT_NAME:
+ 892   2            NameEditKey(Key);
+ 893   2            break;
+ 894   2          case SYS_DEL_NAME:
+ 895   2            NameDeleteKey(Key);
+ 896   2            break;
+ 897   2          case SYS_DEL_ALLNAME:
+ 898   2            NameDelAllKey(Key);
+ 899   2            break;
+ 900   2          case SYS_SET_PSW:
+ 901   2            PswSetKey(Key);
+ 902   2            break;
+ 903   2          case SYS_EDIT_PSW:
+ 904   2            PswEditKey(Key);
+ 905   2            break;
+ 906   2          case SYS_DEL_PSW:
+ 907   2            PswDeleteKey(Key);
+ 908   2            break;
+ 909   2          case SYS_DEL_ALLPSW:
+ 910   2            PswDelAllKey(Key);
+C51 COMPILER V9.57.0.0   SYSSTATUS                                                         08/04/2022 09:22:01 PAGE 16  
+
+ 911   2            break;
+ 912   2          case SYS_INPUT_PSW:
+ 913   2            PswInputKey(Key);
+ 914   2            break;
+ 915   2          case SYS_INPUT_ROOM:
+ 916   2            SysInputRoom(Key);
+ 917   2            break;
+ 918   2          case SYS_INPUT_SYSPSW:
+ 919   2            InputSysPsw(Key);
+ 920   2            break;
+ 921   2          case SYS_EDIT_SYSPSW:
+ 922   2            SysPswEditKey(Key);
+ 923   2            break;
+ 924   2          case SYS_SET_CARD:
+ 925   2            CardSetKey(Key);
+ 926   2            break;
+ 927   2          case SYS_EDIT_CARD:
+ 928   2            CardEditKey(Key);
+ 929   2            break;
+ 930   2          case SYS_DEL_CARD:
+ 931   2            CardDeleteKey(Key);
+ 932   2            break;
+ 933   2          case SYS_DEL_ALLCARD:
+ 934   2            CardDelAllKey(Key);
+ 935   2            break;
+ 936   2          case SYS_CALL:
+ 937   2          case SYS_TALK:
+ 938   2            SysTalkKey(Key);
+ 939   2            break;
+ 940   2          case SYS_SET_TALKTIME:
+ 941   2          case SYS_SET_RINGIN:
+ 942   2          case SYS_SET_RINGOUT:
+ 943   2          case SYS_SET_TONE:
+ 944   2          case SYS_SET_CAMERA:
+ 945   2          case SYS_SET_RELAY:
+ 946   2          case SYS_SET_UNLOCKKEY:
+ 947   2          case SYS_SET_UNLOCKKEY2:
+ 948   2          case SYS_SET_TALKVOLUM:
+ 949   2            SysSubSetKey(Key);
+ 950   2            break;
+ 951   2      #ifdef SMS
+                  case SYS_EDIT_SMS:
+                    SmsEditKey(Key);
+                    break;
+              #endif
+ 956   2        }
+ 957   1        if((IdleTime > 10) && ((SysStatus == SYS_INPUT_SYSPSW) || (SysStatus == SYS_INPUT_PSW) || (SysStatus == S
+             -YS_INPUT_ROOM) || (SysStatus == SYS_IDLE)))
+ 958   1        {
+ 959   2          IdleTime = 10;
+ 960   2        }
+ 961   1      }
+ 962          
+ 963          void SysCard(uint8_t * card)
+ 964          {
+ 965   1        switch(SysStatus)
+ 966   1        {
+ 967   2          case SYS_EDIT_CARD:
+ 968   2          case SYS_DEL_CARD:
+ 969   2            CardEditCardIn(card);
+ 970   2            break;
+ 971   2          case SYS_DEL_ALLCARD:
+C51 COMPILER V9.57.0.0   SYSSTATUS                                                         08/04/2022 09:22:01 PAGE 17  
+
+ 972   2          case SYS_SET_CARD:
+ 973   2            break;
+ 974   2          case SYS_IDLE:
+ 975   2          default:
+ 976   2            if(CheckCard(card) != 0xFFFF)
+ 977   2            {
+ 978   3              Unlock(0,SysPara.RealyTime,true);
+ 979   3            }
+ 980   2            else
+ 981   2            {
+ 982   3              ShowCardErr();
+ 983   3            }
+ 984   2            if((SysStatus != SYS_TALK) && (SysStatus != SYS_CALL))
+ 985   2            {
+ 986   3              IdleTime = 5;
+ 987   3            }
+ 988   2            break;
+ 989   2          
+ 990   2        }
+ 991   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   4510    ----
+   CONSTANT SIZE    =    221    ----
+   XDATA SIZE       =    134      99
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----       1
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

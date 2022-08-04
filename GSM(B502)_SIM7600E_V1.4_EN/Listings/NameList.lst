@@ -1,0 +1,1130 @@
+C51 COMPILER V9.57.0.0   NAMELIST                                                          08/04/2022 09:22:01 PAGE 1   
+
+
+C51 COMPILER V9.57.0.0, COMPILATION OF MODULE NAMELIST
+OBJECT MODULE PLACED IN .\Objects\NameList.obj
+COMPILER INVOKED BY: D:\keil-c51\C51\BIN\C51.EXE UserSrc\NameList.c LARGE OPTIMIZE(8,SPEED) BROWSE NOINTPROMOTE INCDIR(.
+                    -\UserSrc;.\StcLib;.\UserSrc\ENG) DEBUG OBJECTEXTEND PRINT(.\Listings\NameList.lst) TABS(2) OBJECT(.\Objects\NameList.obj
+                    -)
+
+line level    source
+
+   1          #include "Driver.h"
+   2          #include "NameList.h"
+   3          #include "Eeprom.h"
+   4          #include "SysString.h"
+   5          #include "stdio.h"
+   6          #include "Audio.h"
+   7          #include "Lcd12864.h"
+   8          #include "SysStatus.h"
+   9          #include "GSM.h"
+  10          
+  11          void SaveNameCount(void)    //´æ´¢
+  12          {
+  13   1        writeBuf_at24c02(USER_PARA_ADDR+((uint16_t)((uint32_t)(&UsrPara.NameListCount)-(uint32_t)(&UsrPara))), (u
+             -int8_t *)&UsrPara.NameListCount,sizeof(UsrPara.NameListCount));
+  14   1      }
+  15          
+  16          void ClearNameList(void)
+  17          {
+  18   1        UsrPara.NameListCount = 0;
+  19   1        SaveNameCount();
+  20   1      }
+  21          
+  22          void InitNameList(void)
+  23          {
+  24   1        if(UsrPara.NameListCount > NAME_LIST_COUNT)
+  25   1        {
+  26   2          ClearNameList();
+  27   2        }
+  28   1      }
+  29          
+  30          
+  31          void WriteNameItemByIdx(uint16_t idx,NameItemType *pItem)
+  32          {
+  33   1        uint16_t addr = idx;
+  34   1        addr *= sizeof(NameItemType);
+  35   1        writeBuf_at24c02(NAMELIST_ADDR+addr, (uint8_t *)pItem,sizeof(NameItemType));
+  36   1      //  printf("Write:R:%u; N:%s; T1:%s; T2:%s; T3:%s;\r\n",pItem->Room,pItem->Name,pItem->Tel[0],pItem->Tel[1]
+             -,pItem->Tel[2]);
+  37   1      //  ReadNameItemByIdx(idx,pItem);
+  38   1      }
+  39          
+  40          void ReadNameItemByIdx(uint16_t idx,NameItemType *pItem)
+  41          {
+  42   1        uint16_t addr = (uint16_t)idx;
+  43   1        addr *= sizeof(NameItemType);
+  44   1        readBuf_at24c02(NAMELIST_ADDR+addr, (uint8_t *)pItem,sizeof(NameItemType));
+  45   1      //  printf("Read:R:%u; N:%s; T1:%s; T2:%s; T3:%s;\r\n",pItem->Room,pItem->Name,pItem->Tel[0],pItem->Tel[1],
+             -pItem->Tel[2]);
+  46   1      }
+  47          
+  48          uint16_t GetNameItemByRoom(uint16_t room,NameItemType *pItem)
+  49          {
+  50   1        uint16_t idx = 0xFFFF;
+C51 COMPILER V9.57.0.0   NAMELIST                                                          08/04/2022 09:22:01 PAGE 2   
+
+  51   1        idx = GetIdxByRoom(room,NAME_LIST);
+  52   1        if(idx != 0xFFFF)
+  53   1        {
+  54   2          ReadNameItemByIdx(idx,pItem);
+  55   2          return idx;
+  56   2        }
+  57   1        return 0xFFFF;
+  58   1      }
+  59          uint16_t AddNameItem(NameItemType *pItem)
+  60          {
+  61   1        uint16_t idx = 0xFFFF;
+  62   1        idx = GetIdxByRoom(pItem->Room,NAME_LIST);
+  63   1        if(idx != 0xFFFF)
+  64   1        {
+  65   2          WriteNameItemByIdx(idx,pItem);
+  66   2          return idx;
+  67   2        }
+  68   1        else if(UsrPara.NameListCount < NAME_LIST_COUNT)
+  69   1        {
+  70   2          WriteNameItemByIdx(UsrPara.NameListCount,pItem);
+  71   2          UsrPara.NameListCount++;
+  72   2          SaveNameCount();
+  73   2          return UsrPara.NameListCount-1;
+  74   2        }
+  75   1        return 0xFFFF;
+  76   1      }
+  77          void DelNameItemByIdx(uint16_t idx)
+  78          {
+  79   1        NameItemType tmpItem;
+  80   1        if(idx < UsrPara.NameListCount)
+  81   1        {
+  82   2          if(idx == (UsrPara.NameListCount-1))
+  83   2          {
+  84   3            UsrPara.NameListCount--;
+  85   3            SaveNameCount();
+  86   3          }
+  87   2          else
+  88   2          {
+  89   3            UsrPara.NameListCount--;
+  90   3            SaveNameCount();
+  91   3            ReadNameItemByIdx(UsrPara.NameListCount,&tmpItem);
+  92   3            WriteNameItemByIdx(idx,&tmpItem);
+  93   3          }
+  94   2        }
+  95   1      }
+  96          void DelNameItemByRoom(uint16_t room)
+  97          {
+  98   1        uint16_t idx = GetIdxByRoom(room,NAME_LIST);
+  99   1        if(idx != 0xFFFF)
+ 100   1        {
+ 101   2          DelNameItemByIdx(idx);
+ 102   2        }
+ 103   1      }
+ 104          NameItemType NameEditItem;
+ 105          static uint8_t NameEditType = 0;
+ 106          static uint8_t NameEditIdx = 0;
+ 107          static bool NameEditSaved = false;
+ 108          uint16_t EditTime = 0;
+ 109          uint8_t EditChar = 0;
+ 110          void ShowName(NameItemType *pItem,bool tel)
+ 111          {
+ 112   1        uint8_t Disbuf[80];
+C51 COMPILER V9.57.0.0   NAMELIST                                                          08/04/2022 09:22:01 PAGE 3   
+
+ 113   1        uint8_t i;
+ 114   1        LcdClear();
+ 115   1      
+ 116   1        if(tel)
+ 117   1        {
+ 118   2          if(pItem->Tel[i] > 0)
+ 119   2          {
+ 120   3            for(i=0;i<3;i++)
+ 121   3            {
+ 122   4              sprintf(Disbuf,"%s%bd:",StrTabTel,1+i);//,pItem->Tel[i]);
+ 123   4              DisplayString(1+i,0,Disbuf);
+ 124   4              #ifdef LANGUAGE_HB      
+                      DisplayString(1+i,(16-HBstrlen(Disbuf)-strlen(pItem->Tel[i])),pItem->Tel[i]);
+                      #else
+ 127   4              DisplayString(1+i,5,pItem->Tel[i]);
+ 128   4              #endif
+ 129   4              if((NameEditType == (2+i)) && ((SysStatus == SYS_EDIT_NAME)||(SysStatus == SYS_DEL_NAME)))
+ 130   4              {
+ 131   5              #ifdef LANGUAGE_HB  
+                        SetFlash(1+i,15-HBstrlen(Disbuf));//(11-NameEditIdx));
+                      #else
+ 134   5                SetFlash(1+i,(5 + strlen(pItem->Tel[i])));
+ 135   5              if((5 + strlen(pItem->Tel[i])) >= 15)
+ 136   5              {
+ 137   6                SetFlash(1+i,15);
+ 138   6              }
+ 139   5              #endif
+ 140   5              }
+ 141   4            }
+ 142   3          }
+ 143   2        }
+ 144   1        else
+ 145   1        {
+ 146   2          if(pItem->Room > 0)
+ 147   2          {
+ 148   3            //sprintf(Disbuf,"%s%u",StrTabRoom,pItem->Room);
+ 149   3            DisplayString(1,0,StrTabRoom);
+ 150   3      //      sprintf(Disbuf,"%u",pItem->Room);
+ 151   3      //      DisplayString(1,(16-HBstrlen(StrTabRoom)-strlen(Disbuf)),Disbuf);
+ 152   3            #ifdef LANGUAGE_HB  
+                    sprintf(Disbuf,"%u",pItem->Room);
+                    DisplayString(1,(16-HBstrlen(StrTabRoom)-strlen(Disbuf)),Disbuf);
+                    #else
+ 156   3            sprintf(Disbuf,"%s%u",StrTabRoom,pItem->Room);
+ 157   3            DisplayString(1,0,Disbuf);
+ 158   3            #endif
+ 159   3            
+ 160   3            if((NameEditType == 0) && ((SysStatus == SYS_EDIT_NAME)||(SysStatus == SYS_DEL_NAME)))
+ 161   3            {
+ 162   4            #ifdef LANGUAGE_HB  
+                      SetFlash(1,15-HBstrlen(StrTabRoom));//(10-NameEditIdx));
+                    #else
+ 165   4              SetFlash(1,strlen(Disbuf));
+ 166   4            #endif
+ 167   4            }
+ 168   3          }
+ 169   2          else
+ 170   2          {
+ 171   3            DisplayString(1,0,StrTabRoom);
+ 172   3            if((NameEditType == 0) && ((SysStatus == SYS_EDIT_NAME)||(SysStatus == SYS_DEL_NAME)))
+ 173   3            {
+ 174   4            #ifdef LANGUAGE_HB  
+C51 COMPILER V9.57.0.0   NAMELIST                                                          08/04/2022 09:22:01 PAGE 4   
+
+                      SetFlash(1,(10-NameEditIdx));
+                    #else
+ 177   4              SetFlash(1,strlen((uint8_t *)StrTabRoom));
+ 178   4            #endif
+ 179   4            }
+ 180   3          }
+ 181   2          
+ 182   2          sprintf(Disbuf,"%s%s",StrTabName,pItem->Name);
+ 183   2          DisplayString(2,0,Disbuf);
+ 184   2          if((NameEditType == 1) && ((SysStatus == SYS_EDIT_NAME)||(SysStatus == SYS_DEL_NAME)))
+ 185   2          {
+ 186   3          #ifdef LANGUAGE_HB  
+                    i = HBstrlen(pItem->Name);
+                    i -= (EditTime==0?0:1);
+                    if(i <= 12)
+                    {
+                      SetFlash(2,(12-i));
+                    }
+                    else
+                    {
+                      SetFlash(3,(28-i));
+                    }
+                  #else
+ 198   3            SetFlash(2,strlen(Disbuf));
+ 199   3          #endif
+ 200   3          }
+ 201   2        }
+ 202   1      }
+ 203          
+ 204          void EditNameItemCon(void)
+ 205          {
+ 206   1        ClearBuf((uint8_t *)&NameEditItem,sizeof(NameEditItem));
+ 207   1        NameEditType = 0;
+ 208   1        NameEditIdx = 0;
+ 209   1        SysStatus = SYS_EDIT_NAME;
+ 210   1        ShowName(&NameEditItem,false);
+ 211   1      }
+ 212          void NameEditChageType(void)
+ 213          {
+ 214   1        uint16_t tmp;
+ 215   1        NameItemType tmpItem;
+ 216   1        switch(NameEditType)
+ 217   1        {
+ 218   2          case 0:
+ 219   2            NameEditType = 0;
+ 220   2            NameEditIdx = 0;
+ 221   2            tmp = NameEditItem.Room;
+ 222   2            while(tmp > 0)
+ 223   2            {
+ 224   3              NameEditIdx++;
+ 225   3              tmp /= 10;
+ 226   3            }
+ 227   2            break;
+ 228   2          case 1:
+ 229   2            tmp = NameEditItem.Room;
+ 230   2            if(GetNameItemByRoom(tmp,&tmpItem) != 0xFFFF)
+ 231   2            {
+ 232   3              HS_memcpy((uint8_t*)&NameEditItem,(uint8_t*)&tmpItem,sizeof(NameEditItem));
+ 233   3            }
+ 234   2            NameEditIdx = strlen(NameEditItem.Name);
+ 235   2            break;
+ 236   2          case 2:
+C51 COMPILER V9.57.0.0   NAMELIST                                                          08/04/2022 09:22:01 PAGE 5   
+
+ 237   2          case 3:
+ 238   2          case 4:
+ 239   2            NameEditIdx = strlen(NameEditItem.Tel[NameEditType-2]);
+ 240   2            break;
+ 241   2          case 5:
+ 242   2            ShowConfirmSave();
+ 243   2            NameEditSaved = false;
+ 244   2            break;
+ 245   2        }
+ 246   1      }
+ 247          code uint8_t HBtab[27]={0x96,0x97,0x98,0x93,0x94,0x95,0x90,0x91,0x92,0xA0,0x9F,0xA1,0x9C,0x9E,0x9D,0x99,0x
+             -9B,0x9A,0xA8,0xA9,0xAA,0xA6,0xA5,0xA7,0xA2,0xA4,0xA3};
+ 248          void NameEditKey(uint8_t key)
+ 249          {
+ 250   1      //  uint16_t tmp;
+ 251   1      //  NameItemType tmpItem;
+ 252   1        static uint8_t OldKey = 0xFF;
+ 253   1        uint8_t HBtmp;
+ 254   1        
+ 255   1        if(key == KEY_SURE)
+ 256   1        {
+ 257   2          if(NameEditType == 5)
+ 258   2          {
+ 259   3            if(NameEditSaved)
+ 260   3            {
+ 261   4              ClearBuf((uint8_t *)&NameEditItem,sizeof(NameEditItem));
+ 262   4              NameEditIdx = 0;
+ 263   4            }
+ 264   3            else
+ 265   3            {
+ 266   4              if((NameEditItem.Room > 0)
+ 267   4              //  && (strlen(NameEditItem.Name) > 0)
+ 268   4                && (strlen(NameEditItem.Tel[0]) > 0))
+ 269   4              {
+ 270   5                if(AddNameItem(&NameEditItem) != 0xFFFF)
+ 271   5                {
+ 272   6                  ShowSaveOK();
+ 273   6                }
+ 274   5                else
+ 275   5                {
+ 276   6                  ShowErr();
+ 277   6                }
+ 278   5                ClearBuf((uint8_t *)&NameEditItem,sizeof(NameEditItem));
+ 279   5              }
+ 280   4              else
+ 281   4              {
+ 282   5                ShowErr();
+ 283   5              }
+ 284   4              NameEditSaved = true;
+ 285   4              return;
+ 286   4            }
+ 287   3          }
+ 288   2          NameEditType++;
+ 289   2          NameEditType %= 6;
+ 290   2          NameEditChageType();
+ 291   2          EditChar = 0;
+ 292   2          EditTime = 0;
+ 293   2          if(NameEditType == 5)
+ 294   2          {
+ 295   3            return;
+ 296   3          }
+ 297   2        }
+C51 COMPILER V9.57.0.0   NAMELIST                                                          08/04/2022 09:22:01 PAGE 6   
+
+ 298   1        else if(key == KEY_DOWN)
+ 299   1        {
+ 300   2          if(NameEditType < 4)
+ 301   2          {
+ 302   3            NameEditType++;
+ 303   3          }
+ 304   2          else
+ 305   2          {
+ 306   3            NameEditType = 0;
+ 307   3          }
+ 308   2          NameEditChageType();
+ 309   2          EditChar = 0;
+ 310   2          EditTime = 0;
+ 311   2        }
+ 312   1        else if(key == KEY_UP)
+ 313   1        {
+ 314   2          if(NameEditType > 0)
+ 315   2          {
+ 316   3            NameEditType--;
+ 317   3          }
+ 318   2          else
+ 319   2          {
+ 320   3            NameEditType = 4;
+ 321   3          }
+ 322   2          NameEditChageType();
+ 323   2          EditChar = 0;
+ 324   2          EditTime = 0;
+ 325   2        }
+ 326   1        else if(key == KEY_DEL)
+ 327   1        {
+ 328   2          switch(NameEditType)
+ 329   2          {
+ 330   3            case 0:
+ 331   3              if(NameEditIdx > 0)
+ 332   3              {
+ 333   4                NameEditIdx--;
+ 334   4                NameEditItem.Room /= 10;
+ 335   4              }
+ 336   3              else
+ 337   3              {
+ 338   4                NameSetCon();
+ 339   4                return;
+ 340   4              }
+ 341   3              break;
+ 342   3            case 1:
+ 343   3              if((EditTime == 0) && (NameEditItem.Name[NameEditIdx] == 0))
+ 344   3              {
+ 345   4                if(NameEditIdx > 0)
+ 346   4                {
+ 347   5                  NameEditItem.Name[NameEditIdx] = 0;
+ 348   5                  NameEditIdx--;
+ 349   5                  if(NameEditItem.Name[NameEditIdx] > 0x80)
+ 350   5                  {
+ 351   6                    NameEditItem.Name[NameEditIdx] = 0;
+ 352   6                    NameEditIdx--;
+ 353   6                  }
+ 354   5                }
+ 355   4                else
+ 356   4                {
+ 357   5                  NameEditType = 0;
+ 358   5                  NameEditChageType();
+ 359   5                }
+C51 COMPILER V9.57.0.0   NAMELIST                                                          08/04/2022 09:22:01 PAGE 7   
+
+ 360   4              }
+ 361   3              NameEditItem.Name[NameEditIdx] = 0;
+ 362   3              NameEditItem.Name[NameEditIdx+1] = 0;
+ 363   3              break;
+ 364   3            case 2:
+ 365   3            case 3:
+ 366   3            case 4:
+ 367   3              if(NameEditIdx > 0)
+ 368   3              {
+ 369   4                NameEditIdx--;
+ 370   4                NameEditItem.Tel[NameEditType-2][NameEditIdx] = 0;
+ 371   4              }
+ 372   3              else
+ 373   3              {
+ 374   4                NameEditType--;
+ 375   4                NameEditChageType();
+ 376   4              }
+ 377   3              break;
+ 378   3            case 5:
+ 379   3              NameEditType = 0;
+ 380   3              NameEditChageType();
+ 381   3              break;
+ 382   3          }
+ 383   2          EditChar = 0;
+ 384   2          EditTime = 0;
+ 385   2        }
+ 386   1        else if(key == KEY_BELL)
+ 387   1        {
+ 388   2          NameSetCon();
+ 389   2          return;
+ 390   2        }
+ 391   1        else if((key == KEY_TIMEOUT) && (NameEditType == 1) && (NameEditItem.Name[NameEditIdx] != 0))
+ 392   1        {
+ 393   2          if(NameEditItem.Name[NameEditIdx] > 0x80)
+ 394   2          {
+ 395   3            NameEditIdx++;
+ 396   3          }
+ 397   2          NameEditIdx++;
+ 398   2          EditChar = 0;
+ 399   2          EditTime = 0;
+ 400   2        }
+ 401   1        if((key >= 0) && (key <= 9))
+ 402   1        {
+ 403   2          switch(NameEditType)
+ 404   2          {
+ 405   3            case 0:
+ 406   3              if(NameEditIdx < 4)
+ 407   3              {
+ 408   4                NameEditItem.Room *= 10;
+ 409   4                NameEditItem.Room += key;
+ 410   4                NameEditIdx++;
+ 411   4              }
+ 412   3              if(NameEditItem.Room == 0)
+ 413   3              {
+ 414   4                NameEditIdx = 0;
+ 415   4              }
+ 416   3              break;
+ 417   3            case 1:
+ 418   3        /*      {
+ 419   3                if((HBstrlen(NameEditItem.Name) >= NAME_LEN))
+ 420   3                {
+ 421   3                  if((EditTime == 0) || (OldKey != key))
+C51 COMPILER V9.57.0.0   NAMELIST                                                          08/04/2022 09:22:01 PAGE 8   
+
+ 422   3                  {
+ 423   3                    return;
+ 424   3                  }
+ 425   3                }
+ 426   3                if((OldKey != key) && (NameEditItem.Name[NameEditIdx] != 0))
+ 427   3                {
+ 428   3                  if(NameEditItem.Name[NameEditIdx] > 0x80)
+ 429   3                  {
+ 430   3                    NameEditIdx++;
+ 431   3                  }
+ 432   3                  NameEditIdx++;
+ 433   3                  EditChar = 0;
+ 434   3                }
+ 435   3                if(key == 0)
+ 436   3                {
+ 437   3                  NameEditItem.Name[NameEditIdx] = FhChar[EditChar];
+ 438   3                }
+ 439   3                else if(EditChar < 3)
+ 440   3                {
+ 441   3                  NameEditItem.Name[NameEditIdx] = 0xD7;
+ 442   3                  NameEditItem.Name[NameEditIdx+1] = HBtab[(key-1)*3+EditChar];//HBtmp+EditChar;
+ 443   3                }
+ 444   3                else if(EditChar == 3)
+ 445   3                {
+ 446   3                  NameEditItem.Name[NameEditIdx+1] = 0;
+ 447   3                  NameEditItem.Name[NameEditIdx] = key+'0';
+ 448   3                }
+ 449   3                else
+ 450   3                {
+ 451   3                  NameEditItem.Name[NameEditIdx+1] = 0;
+ 452   3                  HBtmp = EditChar - 4;
+ 453   3                  if(key == 9)
+ 454   3                  {
+ 455   3                    if(HBtmp < 2)
+ 456   3                      NameEditItem.Name[NameEditIdx] = HBtmp+'Y';
+ 457   3                    else if(HBtmp == 2)
+ 458   3                      NameEditItem.Name[NameEditIdx] = '.';
+ 459   3                    else if(HBtmp == 5)
+ 460   3                      NameEditItem.Name[NameEditIdx] = ',';
+ 461   3                    else
+ 462   3                      NameEditItem.Name[NameEditIdx] = HBtmp-3+'y';
+ 463   3                  }
+ 464   3                  else
+ 465   3                  {
+ 466   3                    NameEditItem.Name[NameEditIdx] = (key-1)*3+HBtmp + (HBtmp>2?'a'-3:'A');
+ 467   3                  }
+ 468   3                }
+ 469   3                EditChar++;
+ 470   3                EditChar %= 10;
+ 471   3                EditTime = 1000;
+ 472   3              }*/
+ 473   3              #ifdef LANGUAGE_HB
+                      if((HBstrlen(NameEditItem.Name) >= NAME_LEN))
+                      {
+                        if((EditTime == 0) || (OldKey != key))
+                        {
+                          return;
+                        }
+                      } 
+                      if((OldKey != key) && (NameEditItem.Name[NameEditIdx] != 0))
+                      {
+                        if(NameEditItem.Name[NameEditIdx] > 0x80)
+C51 COMPILER V9.57.0.0   NAMELIST                                                          08/04/2022 09:22:01 PAGE 9   
+
+                        {
+                          NameEditIdx++;
+                        }
+                        NameEditIdx++;
+                        EditChar = 0;
+                      }
+                      if(key == 0)
+                      {
+                        NameEditItem.Name[NameEditIdx] = FhChar[EditChar];
+                      }
+                      else if(EditChar < 3)
+                      {
+                        NameEditItem.Name[NameEditIdx] = 0xD7;
+                        NameEditItem.Name[NameEditIdx+1] = HBtab[(key-1)*3+EditChar];//HBtmp+EditChar;
+                      } 
+                      else if(EditChar == 3)
+                      {
+                        NameEditItem.Name[NameEditIdx+1] = 0;
+                        NameEditItem.Name[NameEditIdx] = key+'0';
+                      }
+                      else
+                      {
+                        NameEditItem.Name[NameEditIdx+1] = 0;
+                        HBtmp = EditChar - 4;
+                        if(key == 9)
+                        {
+                          if(HBtmp < 2)
+                            NameEditItem.Name[NameEditIdx] = HBtmp+'Y';
+                          else if(HBtmp == 2)
+                            NameEditItem.Name[NameEditIdx] = '.';
+                          else if(EditChar == 5)
+                            NameEditItem.Name[NameEditIdx] = ',';
+                          else
+                            NameEditItem.Name[NameEditIdx] = HBtmp-3+'y';
+                        }
+                        else
+                        {
+                          NameEditItem.Name[NameEditIdx] = (key-1)*3+HBtmp + (HBtmp>2?'a'-3:'A');
+                        }
+                      }
+                      EditChar++;
+                      EditChar %= 10;
+                      EditTime = 1000;
+                    
+                      #else 
+ 529   3      //        if((OldKey != key) && (NameEditItem.Name[NameEditIdx] != 0))
+ 530   3      //        {
+ 531   3      //          if(NameEditItem.Name[NameEditIdx] > 0x80)
+ 532   3      //          {
+ 533   3      //            NameEditIdx++;
+ 534   3      //          }
+ 535   3      //          NameEditIdx++;
+ 536   3      //          EditChar = 0;
+ 537   3      //        }
+ 538   3      //        if(key == 0)
+ 539   3      //        {
+ 540   3      //          NameEditItem.Name[NameEditIdx] = FhChar[EditChar];
+ 541   3      //        }
+ 542   3      //        else if(EditChar == 0)
+ 543   3      //        {
+ 544   3      //          NameEditItem.Name[NameEditIdx+1] = 0;
+ 545   3      //          NameEditItem.Name[NameEditIdx] = key+'0';
+C51 COMPILER V9.57.0.0   NAMELIST                                                          08/04/2022 09:22:01 PAGE 10  
+
+ 546   3      //        }
+ 547   3      //        else
+ 548   3      //        {
+ 549   3      //          NameEditItem.Name[NameEditIdx+1] = 0;
+ 550   3      //          HBtmp = EditChar -1;
+ 551   3      //          if(key == 9)
+ 552   3      //          {
+ 553   3      //            if(HBtmp < 2)
+ 554   3      //              NameEditItem.Name[NameEditIdx] = HBtmp+'Y';
+ 555   3      //            else if((HBtmp == 2) ||(HBtmp == 3))
+ 556   3      //            NameEditItem.Name[NameEditIdx] = HBtmp-2 +'y';
+ 557   3      //            else if(HBtmp == 4)
+ 558   3      //              NameEditItem.Name[NameEditIdx] = '.';
+ 559   3      ////          else if(EditChar == 5)
+ 560   3      ////          NameEditItem.Name[NameEditIdx] = ',';
+ 561   3      //            else if(HBtmp == 5)
+ 562   3      //              NameEditItem.Name[NameEditIdx] = ',';
+ 563   3      //          }
+ 564   3      //          else
+ 565   3      //          {
+ 566   3      //            NameEditItem.Name[NameEditIdx] = (key-1)*3+HBtmp + (HBtmp>2?'a'-3:'A');
+ 567   3      //          }
+ 568   3      //        }
+ 569   3      //        EditChar++;
+ 570   3      //        EditChar %= 7;
+ 571   3      //        EditTime = 1000;
+ 572   3      
+ 573   3              if((OldKey != key) && (NameEditItem.Name[NameEditIdx] != 0))
+ 574   3              {
+ 575   4                if(NameEditItem.Name[NameEditIdx] > 0x80)
+ 576   4                {
+ 577   5                  NameEditIdx++;
+ 578   5                }
+ 579   4                NameEditIdx++;
+ 580   4                EditChar = 0;
+ 581   4              }
+ 582   3              if(key == 0)
+ 583   3              {
+ 584   4                NameEditItem.Name[NameEditIdx] = FhChar[EditChar];
+ 585   4              }
+ 586   3      //        else if(EditChar == 0)
+ 587   3      //        {
+ 588   3      //          NameEditItem.Name[NameEditIdx+1] = 0;
+ 589   3      //          NameEditItem.Name[NameEditIdx] = key+'0';
+ 590   3      //        }
+ 591   3              else
+ 592   3              {
+ 593   4                NameEditItem.Name[NameEditIdx+1] = 0;
+ 594   4                HBtmp = EditChar;
+ 595   4                if(key == 9)
+ 596   4                {
+ 597   5                  if(HBtmp < 2)
+ 598   5                    NameEditItem.Name[NameEditIdx] = HBtmp+'Y';
+ 599   5                  else if((HBtmp == 2) ||(HBtmp == 3))
+ 600   5                  NameEditItem.Name[NameEditIdx] = HBtmp-2 +'y';
+ 601   5                  else if(HBtmp == 4)
+ 602   5                    NameEditItem.Name[NameEditIdx] = '.';
+ 603   5      //          else if(EditChar == 5)
+ 604   5      //          NameEditItem.Name[NameEditIdx] = ',';
+ 605   5                  else if(HBtmp == 5)
+ 606   5                    NameEditItem.Name[NameEditIdx] = ',';
+ 607   5                }
+C51 COMPILER V9.57.0.0   NAMELIST                                                          08/04/2022 09:22:01 PAGE 11  
+
+ 608   4                else
+ 609   4                {
+ 610   5                  NameEditItem.Name[NameEditIdx] = (key-1)*3+HBtmp + (HBtmp>2?'a'-3:'A');
+ 611   5                }
+ 612   4              }
+ 613   3              EditChar++;
+ 614   3              EditChar %= 6;
+ 615   3              EditTime = 1000;
+ 616   3              #endif    
+ 617   3              break;
+ 618   3            case 2:
+ 619   3            case 3:
+ 620   3            case 4:
+ 621   3              if(NameEditIdx < TEL_LEN-1)
+ 622   3              {
+ 623   4                NameEditItem.Tel[NameEditType-2][NameEditIdx++] = key+'0';
+ 624   4              }
+ 625   3              break;
+ 626   3          }
+ 627   2        }
+ 628   1        
+ 629   1        OldKey = key;
+ 630   1        ShowName(&NameEditItem,(NameEditType > 1));
+ 631   1      }
+ 632          
+ 633          void DeleteNameCon(void)
+ 634          {
+ 635   1        ClearBuf((uint8_t *)&NameEditItem,sizeof(NameEditItem));
+ 636   1        NameEditType = 0;
+ 637   1        NameEditIdx = 0;
+ 638   1        SysStatus = SYS_DEL_NAME;
+ 639   1        ShowName(&NameEditItem,false);
+ 640   1      }
+ 641          
+ 642          void NameDeleteKey(uint8_t key)
+ 643          {
+ 644   1        uint16_t tmp;
+ 645   1        NameItemType tmpItem;
+ 646   1        if(key == KEY_SURE)
+ 647   1        {
+ 648   2          if(NameEditType == 2)
+ 649   2          {
+ 650   3            if(NameEditSaved)
+ 651   3            {
+ 652   4              ClearBuf((uint8_t *)&NameEditItem,sizeof(NameEditItem));
+ 653   4              NameEditIdx = 0;
+ 654   4              NameEditType = 0;
+ 655   4            }
+ 656   3            else
+ 657   3            {
+ 658   4              DelNameItemByRoom(NameEditItem.Room);
+ 659   4              NameEditSaved = true;
+ 660   4              ShowDeleteOK();
+ 661   4              return;
+ 662   4            }
+ 663   3          }
+ 664   2          NameEditType++;
+ 665   2          NameEditType %= 3;
+ 666   2          switch(NameEditType)
+ 667   2          {
+ 668   3            case 0:
+ 669   3              NameEditIdx = 0;
+C51 COMPILER V9.57.0.0   NAMELIST                                                          08/04/2022 09:22:01 PAGE 12  
+
+ 670   3              tmp = NameEditItem.Room;
+ 671   3              while(tmp > 0)
+ 672   3              {
+ 673   4                NameEditIdx++;
+ 674   4                tmp /= 10;
+ 675   4              }
+ 676   3              break;
+ 677   3            case 1:
+ 678   3              if(GetNameItemByRoom(NameEditItem.Room,&tmpItem) != 0xFFFF)
+ 679   3              {
+ 680   4                HS_memcpy((uint8_t*)&NameEditItem,(uint8_t*)&tmpItem,sizeof(NameEditItem));
+ 681   4              }
+ 682   3              NameEditIdx = strlen(NameEditItem.Name);
+ 683   3              break;
+ 684   3            case 2:
+ 685   3              ShowConfirmDel();
+ 686   3              NameEditSaved = false;
+ 687   3              return;
+ 688   3          }
+ 689   2          EditChar = 0;
+ 690   2          EditTime = 0;
+ 691   2        }
+ 692   1        else if(key == KEY_DEL)
+ 693   1        {
+ 694   2          switch(NameEditType)
+ 695   2          {
+ 696   3            case 0:
+ 697   3              if(NameEditIdx > 0)
+ 698   3              {
+ 699   4                NameEditIdx--;
+ 700   4                NameEditItem.Room /= 10;
+ 701   4              }
+ 702   3              else
+ 703   3              {
+ 704   4                NameSetCon();
+ 705   4                return;
+ 706   4              }
+ 707   3              break;
+ 708   3            case 1:
+ 709   3              NameEditType = 0;
+ 710   3              NameEditItem.Name[0] = 0;
+ 711   3              tmp = NameEditItem.Room;
+ 712   3              NameEditIdx = 0;
+ 713   3              while(tmp > 0)
+ 714   3              {
+ 715   4                NameEditIdx++;
+ 716   4                tmp /= 10;
+ 717   4              }
+ 718   3              break;
+ 719   3            case 2:
+ 720   3              NameEditType = 0;
+ 721   3              NameEditItem.Name[0] = 0;
+ 722   3              tmp = NameEditItem.Room;
+ 723   3              NameEditIdx = 0;
+ 724   3              while(tmp > 0)
+ 725   3              {
+ 726   4                NameEditIdx++;
+ 727   4                tmp /= 10;
+ 728   4              }
+ 729   3              break;
+ 730   3          }
+ 731   2          EditChar = 0;
+C51 COMPILER V9.57.0.0   NAMELIST                                                          08/04/2022 09:22:01 PAGE 13  
+
+ 732   2          EditTime = 0;
+ 733   2        }
+ 734   1        else if(key == KEY_BELL)
+ 735   1        {
+ 736   2          NameSetCon();
+ 737   2          return;
+ 738   2        }
+ 739   1        if((key >= 0) && (key <= 9) && (NameEditType == 0))
+ 740   1        {
+ 741   2          if(NameEditIdx < 4)
+ 742   2          {
+ 743   3            NameEditItem.Room *= 10;
+ 744   3            NameEditItem.Room += key;
+ 745   3            NameEditIdx++;
+ 746   3          }
+ 747   2          if(NameEditItem.Room == 0)
+ 748   2          {
+ 749   3            NameEditIdx = 0;
+ 750   3          }
+ 751   2        }
+ 752   1        ShowName(&NameEditItem,false);
+ 753   1      }
+ 754          
+ 755          void DeleteAllNameCon(void)
+ 756          {
+ 757   1        SysStatus = SYS_DEL_ALLNAME;
+ 758   1        LcdClear();
+ 759   1        DisplayString(1,0,StrTabDelAllName);
+ 760   1      }
+ 761          void NameDelAllKey(uint8_t key)
+ 762          {
+ 763   1        switch(key)
+ 764   1        {
+ 765   2          case KEY_SURE:
+ 766   2            ClearNameList();
+ 767   2            ShowDeleteOK();
+ 768   2            break;
+ 769   2          case KEY_BELL:
+ 770   2          case KEY_DEL:
+ 771   2            NameSetCon();
+ 772   2            break;
+ 773   2        }
+ 774   1      }
+ 775          
+ 776          void NameSetCon(void)
+ 777          {
+ 778   1        uint8_t Disbuf[10];
+ 779   1        SysStatus = SYS_SET_NAME;
+ 780   1        LcdClear();
+ 781   1        DisplayString(0,0,StrTabNameSet1);
+ 782   1        DisplayString(1,0,StrTabNameSet2);
+ 783   1        DisplayString(2,0,StrTabNameSet3);
+ 784   1        DisplayString(3,0,StrTabListCount);
+ 785   1        sprintf(Disbuf,"%u",UsrPara.NameListCount);
+ 786   1        #ifdef LANGUAGE_HB
+                DisplayString(3,15-HBstrlen(StrTabListCount)-strlen(Disbuf),Disbuf);  
+                #else
+ 789   1        DisplayString(3,6,Disbuf);  
+ 790   1        #endif
+ 791   1      }
+ 792          void NameSetKey(uint8_t key)
+ 793          {
+C51 COMPILER V9.57.0.0   NAMELIST                                                          08/04/2022 09:22:01 PAGE 14  
+
+ 794   1        switch(key)
+ 795   1        {
+ 796   2          case 1:
+ 797   2            EditNameItemCon();
+ 798   2            break;
+ 799   2          case 2:
+ 800   2            DeleteNameCon();
+ 801   2            break;
+ 802   2          case 3:
+ 803   2            DeleteAllNameCon();
+ 804   2            break;
+ 805   2          case KEY_DEL:
+ 806   2          case KEY_BELL:
+ 807   2            SysSettingCon();
+ 808   2            break;
+ 809   2        }
+ 810   1      }
+ 811          
+ 812          void ShowNameByIdx(uint16_t idx)
+ 813          {
+ 814   1        NameItemType tmpItem;
+ 815   1        if(idx < UsrPara.NameListCount)
+ 816   1        {
+ 817   2          ReadNameItemByIdx(idx,&tmpItem);
+ 818   2          ShowName(&tmpItem,false);
+ 819   2        }
+ 820   1      }
+ 821          
+ 822          //bool CallByIdx(uint16_t idx,uint8_t telIdx)
+ 823          //{
+ 824          //  uint8_t Disbuf[20];
+ 825          //  NameItemType tmpItem;
+ 826          //  ReadNameItemByIdx(idx,&tmpItem);
+ 827          //  if(strlen(tmpItem.Tel[telIdx]) > 0)
+ 828          //  {
+ 829          //    if(GSM_Call(tmpItem.Tel[telIdx]))
+ 830          //    {
+ 831          //      sprintf(Disbuf,"%s%s",StrTabCall,tmpItem.Tel[telIdx]);
+ 832          //      DisplayString(1,0,Disbuf);
+ 833          //      return true;
+ 834          //    }
+ 835          //    return false;
+ 836          //  }
+ 837          //  return false;
+ 838          //}
+ 839          
+ 840          //bool CallByRoom(uint16_t Room,uint8_t telIdx)
+ 841          //{
+ 842          //  uint8_t Disbuf[20];
+ 843          //  NameItemType tmpItem;
+ 844          //  if(GetNameItemByRoom(Room,&tmpItem) != 0xFFFF)
+ 845          //  {
+ 846          //    if(strlen(tmpItem.Tel[telIdx]) > 0)
+ 847          //    {
+ 848          //      if(GSM_Call(tmpItem.Tel[telIdx]))
+ 849          //      {
+ 850          //        sprintf(Disbuf,"%s%s",StrTabCall,tmpItem.Tel[telIdx]);
+ 851          //        DisplayString(1,0,Disbuf);
+ 852          //        return true;
+ 853          //      }
+ 854          //    }
+ 855          //  }
+C51 COMPILER V9.57.0.0   NAMELIST                                                          08/04/2022 09:22:01 PAGE 15  
+
+ 856          //  return false;
+ 857          //}
+ 858          
+ 859          bool CallByNameItem(NameItemType *NameItem,uint8_t telIdx)
+ 860          {
+ 861   1        uint8_t Disbuf[50];
+ 862   1        //printf("CallByNameItem:%bd,%s\r\n",telIdx,NameItem->Tel[telIdx]);
+ 863   1        if(strlen(NameItem->Tel[telIdx]) > 0)
+ 864   1        {
+ 865   2          if(GSM_Call(NameItem->Tel[telIdx]))
+ 866   2          {
+ 867   3            LcdClear();
+ 868   3            //sprintf(Disbuf,"%s%s",StrTabCall,NameItem->Tel[telIdx]);
+ 869   3            if(strlen(NameItem->Name) == 0)
+ 870   3            {
+ 871   4              sprintf(Disbuf,"%s%u",StrTabCall,NameItem->Room);
+ 872   4            }
+ 873   3            else
+ 874   3            {
+ 875   4              sprintf(Disbuf,"%s%s",StrTabCall,NameItem->Name);
+ 876   4              //MP3_StartPlay(MP3_Speak);
+ 877   4            }
+ 878   3            
+ 879   3            DisplayString(1,0,Disbuf);
+ 880   3      #ifdef SMS      
+                    sprintf(Disbuf,"%u(%bd):%s;\n",NameItem->Room,telIdx+1,NameItem->Tel[telIdx]);
+                    //printf("%s\r\n",Disbuf);
+                    AddSms(Disbuf);
+              #endif
+ 885   3            return true;
+ 886   3          }
+ 887   2          return false;
+ 888   2        }
+ 889   1        return false;
+ 890   1      }
+ 891          #include "UART.h"
+ 892          void RevNamelist(uint8_t *buf)
+ 893          {
+ 894   1        int i,cnt;
+ 895   1        int j;
+ 896   1        NameItemType tmpItem;
+ 897   1        uint8_t  *p = buf;
+ 898   1        
+ 899   1        if(SysStatus != SYS_SETTING)
+ 900   1        {
+ 901   2          printf("Download Namelist Err:( not in setting )!\r\n");
+ 902   2          while(COM1.B_TX_busy);
+ 903   2          return;
+ 904   2        }
+ 905   1        IdleTime = 15;
+ 906   1        i = lookforstr(p,"C:");
+ 907   1        if(i != -1)
+ 908   1        {
+ 909   2          p += (i+2);
+ 910   2          sscanf(p,"%d",&cnt);
+ 911   2        }
+ 912   1        printf("RevNamelist(Cnt:%d)\r\n",cnt);
+ 913   1        for(i=0;i<cnt;i++)
+ 914   1        {
+ 915   2          j = lookforstr(p,"R:");
+ 916   2          if(j != -1)
+ 917   2          {
+C51 COMPILER V9.57.0.0   NAMELIST                                                          08/04/2022 09:22:01 PAGE 16  
+
+ 918   3            p += j+2;
+ 919   3            
+ 920   3            ClearBuf((uint8_t *)&tmpItem,sizeof(tmpItem));
+ 921   3            sscanf(p,"%u;",&tmpItem.Room);
+ 922   3      
+ 923   3            j = lookforstr(p,"N:");
+ 924   3            if(j != -1)
+ 925   3            {
+ 926   4              p += j+2;
+ 927   4              //sscanf(p,"%s;",&tmpItem.Name);
+ 928   4              j = 0;
+ 929   4              while((*p != ';') && (j<(NAME_LEN*2+2)))
+ 930   4              {
+ 931   5                tmpItem.Name[j] = *p++;
+ 932   5                j++;
+ 933   5              }
+ 934   4              tmpItem.Name[j]  = 0;
+ 935   4            }
+ 936   3            
+ 937   3            j = lookforstr(p,"T1:");
+ 938   3            if(j != -1)
+ 939   3            {
+ 940   4              p += j+3;
+ 941   4              //sscanf(p,"%s;",&tmpItem.Name);
+ 942   4              j = 0;
+ 943   4              while((*p != ';') && (j<TEL_LEN))
+ 944   4              {
+ 945   5                tmpItem.Tel[0][j] = *p++;
+ 946   5                j++;
+ 947   5              }
+ 948   4              tmpItem.Tel[0][j] = 0;
+ 949   4            }
+ 950   3            
+ 951   3            j = lookforstr(p,"T2:");
+ 952   3            if(j != -1)
+ 953   3            {
+ 954   4              p += j+3;
+ 955   4              //sscanf(p,"%s;",&tmpItem.Name);
+ 956   4              j = 0;
+ 957   4              while((*p != ';') && (j<TEL_LEN))
+ 958   4              {
+ 959   5                tmpItem.Tel[1][j] = *p++;
+ 960   5                j++;
+ 961   5              }
+ 962   4              tmpItem.Tel[1][j]  = 0;
+ 963   4            }
+ 964   3            
+ 965   3            j = lookforstr(p,"T3:");
+ 966   3            if(j != -1)
+ 967   3            {
+ 968   4              p += j+3;
+ 969   4              //sscanf(p,"%s;",&tmpItem.Name);
+ 970   4              j = 0;
+ 971   4              while((*p != ';') && (j<TEL_LEN))
+ 972   4              {
+ 973   5                tmpItem.Tel[2][j] = *p++;
+ 974   5                j++;
+ 975   5              }
+ 976   4              tmpItem.Tel[2][j]  = 0;
+ 977   4            }
+ 978   3            j = AddNameItem(&tmpItem);
+ 979   3            printf("Idx:%d-(%d); R:%u; N:%s; T1:%s; T2:%s; T3:%s;\r\n",i+1,j+1,tmpItem.Room,tmpItem.Name,tmpItem.Te
+C51 COMPILER V9.57.0.0   NAMELIST                                                          08/04/2022 09:22:01 PAGE 17  
+
+             -l[0],tmpItem.Tel[1],tmpItem.Tel[2]);
+ 980   3            while(COM1.B_TX_busy);
+ 981   3          }
+ 982   2          
+ 983   2          if(j == 0xFFFF)
+ 984   2          {
+ 985   3            break;
+ 986   3          }
+ 987   2        }
+ 988   1        if(i == cnt)
+ 989   1        {
+ 990   2          printf("Download Namelist OK! #(%u)#\r\n",UsrPara.NameListCount);
+ 991   2        }
+ 992   1        else
+ 993   1        {
+ 994   2          printf("Download Namelist Err:(%u#%u)!\r\n",i,j);
+ 995   2        }
+ 996   1        while(COM1.B_TX_busy);
+ 997   1      }
+ 998          
+ 999          #ifdef SMS
+              uint8_t SmsEdit[TEL_LEN];
+              uint16_t SmsEditIdx = 0;
+              void SaveSmsTel(void)
+              {
+                uint8_t len = strlen(SmsEdit);
+                ClearBuf(SysPara.SmsTel,sizeof(SysPara.SmsTel));
+                HS_memcpy(SysPara.SmsTel,SmsEdit,len);
+                writeBuf_at24c02(SYS_PARA_ADDR+((uint16_t)((uint32_t)(&SysPara.SmsTel)-(uint32_t)(&SysPara))), SysPara.Sm
+             -sTel,sizeof(SysPara.SmsTel));
+                ShowSaveOK();
+              }
+              
+              void ShowSmsEidt(void)
+              {
+                //uint8_t Disbuf[80];
+                LcdClear();
+              
+                //sprintf(Disbuf,"%s%bd:",StrTabSms);//,pItem->Tel[i]);
+                DisplayString(1,1,StrTabSms);
+                //DisplayString(2,(16-HBstrlen(StrTabSms)-strlen(SmsEdit)),SmsEdit);
+                DisplayString(2,0,SmsEdit);
+              }
+              
+              void SmsSetCon(void)
+              {
+                ClearBuf(SmsEdit,sizeof(SmsEdit));
+                SmsEditIdx = strlen(SysPara.SmsTel);
+                HS_memcpy(SmsEdit,SysPara.SmsTel,SmsEditIdx);
+                SysStatus = SYS_EDIT_SMS;
+                ShowSmsEidt();
+              }
+              
+              void SmsEditKey(uint8_t key)
+              {
+                if(SmsEditIdx == 99)
+                {
+                  SysIdleCon();
+                }
+                if(key == KEY_SURE)
+                {
+                  SaveSmsTel();
+C51 COMPILER V9.57.0.0   NAMELIST                                                          08/04/2022 09:22:01 PAGE 18  
+
+                  SmsEditIdx = 99;
+                  return;
+                }
+                else if(key == KEY_DEL)
+                {
+                  if(SmsEditIdx > 0)
+                  {
+                    SmsEditIdx--;
+                    SmsEdit[SmsEditIdx] = 0;
+                  }
+                }
+                else if(key == KEY_BELL)
+                {
+                  SysIdleCon();
+                  return;
+                }
+                if((key >= 0) && (key <= 9))
+                {
+                  if(SmsEditIdx < TEL_LEN-1)
+                  {
+                    SmsEdit[SmsEditIdx++] = key+'0';
+                  }
+                } 
+                ShowSmsEidt();
+              }
+              #endif
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   4639    ----
+   CONSTANT SIZE    =    253    ----
+   XDATA SIZE       =     86     581
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      1       1
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

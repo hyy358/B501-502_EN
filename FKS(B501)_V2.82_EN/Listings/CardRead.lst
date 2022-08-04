@@ -1,0 +1,413 @@
+C51 COMPILER V9.57.0.0   CARDREAD                                                          08/04/2022 09:41:27 PAGE 1   
+
+
+C51 COMPILER V9.57.0.0, COMPILATION OF MODULE CARDREAD
+OBJECT MODULE PLACED IN .\Objects\CardRead.obj
+COMPILER INVOKED BY: D:\keil-c51\C51\BIN\C51.EXE UserSrc\CardRead.c LARGE OPTIMIZE(8,SPEED) BROWSE NOINTPROMOTE INCDIR(.
+                    -\UserSrc;.\StcLib;.\UserSrc\ENG) DEBUG OBJECTEXTEND PRINT(.\Listings\CardRead.lst) TABS(2) OBJECT(.\Objects\CardRead.obj
+                    -)
+
+line level    source
+
+   1          #include "Driver.h"
+   2          #include "RfidCard.h"
+   3          #include "stdio.h"
+   4          
+   5          
+   6          uint8_t CardRt = 0;
+   7          uint8_t CardGetBit = 0;
+   8          uint8_t CardBitCount = 0;
+   9          uint8_t CardChCount = 0;
+  10          uint16_t CardCh = 0;
+  11          //bool sth = false;
+  12          uint8_t RfidCardBuf[20];
+  13          uint8_t CardCode[RFID_CARD_LEN];
+  14          bool CardReadOK = false;
+  15          bool CardGetOk = false;
+  16          uint32_t CodeOld = 0;
+  17          uint8_t CodeCheckTs = 0;
+  18          uint32_t CodeIn = 0;
+  19          uint16_t CardInTime = 1000;
+  20          uint16_t CardRaw[20];
+  21          uint8_t WgTimeOut = 0;
+  22          uint32_t WG_code = 0;
+  23          uint32_t WG_bitcnt = 0;
+  24          void CardReadInit(void)
+  25          {
+  26   1        CardRt = 0;
+  27   1        CardGetBit = 0;
+  28   1        CardCh = 0;
+  29   1        CardBitCount = 0;
+  30   1        CardChCount = 0;
+  31   1        CardReadOK = false;
+  32   1        CardGetOk = false;
+  33   1      }
+  34          
+  35          void CardMsTask(void)
+  36          {
+  37   1        if(CardInTime)
+  38   1        {
+  39   2          if(--CardInTime == 0)
+  40   2          {
+  41   3            CodeOld = 0;
+  42   3            CodeCheckTs = 0;
+  43   3            CodeIn = 0;
+  44   3          }
+  45   2        }
+  46   1      }
+  47          
+  48          bool WG_wait = false;
+  49          bool WG_ok = false;
+  50          //时序判断
+  51          void WG_Read26(void)
+  52          {
+  53   1        
+C51 COMPILER V9.57.0.0   CARDREAD                                                          08/04/2022 09:41:27 PAGE 2   
+
+  54   1        if((WG_wait == true) && ((RFID_DAT0 != 1) || (RFID_DAT1 != 1)) )  //总线待机判断
+  55   1        {
+  56   2          return;
+  57   2        }
+  58   1        WG_wait = false;                           //设置标志位判断读到卡进入奇偶校验
+  59   1        
+  60   1        if((RFID_DAT0 == 1) && (RFID_DAT1 == 1) )  //判断数据线0,1状态
+  61   1        {
+  62   2          return;
+  63   2        }
+  64   1        
+  65   1        WG_code <<= 1;
+  66   1        if((RFID_DAT0 == 0)&&(RFID_DAT1 == 1))       //状态0
+  67   1        {
+  68   2          
+  69   2        }
+  70   1        else if((RFID_DAT0 == 1)&&(RFID_DAT1 == 0))  //状态1
+  71   1        {
+  72   2          WG_code |= 1;
+  73   2        }
+  74   1        WgTimeOut = 200;
+  75   1        WG_bitcnt++;
+  76   1        WG_wait = true;
+  77   1      
+  78   1          if(WG_bitcnt == 26)
+  79   1            {
+  80   2              WG_bitcnt = 0;      
+  81   2              //printf("CardRead: %lx\r\n",WG_code);
+  82   2              WG_ok = true;
+  83   2              CardReadOK = true;
+  84   2            }
+  85   1      }
+  86          
+  87          //奇偶校验
+  88          void WG_Send26(void)
+  89          {
+  90   1        
+  91   1        uint8_t one_num = 0;
+  92   1        uint8_t even = 0; //偶检验
+  93   1        uint8_t odd = 0; //奇检验 
+  94   1        uint32_t check_temp,i;
+  95   1        uint32_t code_temp;
+  96   1      //  uint32_t *wData;
+  97   1        
+  98   1      //  if(NULL == WG_code)
+  99   1      //  {
+ 100   1      //    return ;
+ 101   1      //  }
+ 102   1        if(CardGetOk)
+ 103   1        {
+ 104   2          return;
+ 105   2        }
+ 106   1        if(WG_ok == true)
+ 107   1        {
+ 108   2        
+ 109   2          check_temp = ((WG_code >> 1) & 0x000FFF);      //取2-13位 偶校验 
+ 110   2          for(i = 0;i < 12; i++)
+ 111   2          {
+ 112   3            if(check_temp & 0x01) 
+ 113   3            one_num++;
+ 114   3            check_temp >>= 1;
+ 115   3          }
+C51 COMPILER V9.57.0.0   CARDREAD                                                          08/04/2022 09:41:27 PAGE 3   
+
+ 116   2      
+ 117   2          if(one_num % 2 ==0)
+ 118   2          even = 1;
+ 119   2          else even = 0;
+ 120   2      
+ 121   2          one_num = 0;
+ 122   2          check_temp = ((WG_code >> 13) & 0x000FFF);      //取14-25位 奇校验 
+ 123   2          for(i = 0;i < 12;i++)
+ 124   2          {
+ 125   3            if(check_temp & 0x01)   
+ 126   3            one_num++;
+ 127   3            check_temp >>= 1;
+ 128   3          }
+ 129   2          
+ 130   2          if(one_num % 2 == 0 )
+ 131   2          odd = 0;
+ 132   2          else odd = 1;
+ 133   2      
+ 134   2          
+ 135   2          if((odd == ((WG_code >> 25) &0x01)) && (even == (WG_code & 0x01)))
+ 136   2          {
+ 137   3            code_temp = ((WG_code >> 1) & 0xFFFFFF);
+ 138   3            printf("CardRead: %lu\r\n",code_temp);
+ 139   3            CardCode[0] = (code_temp>>16)&0xFF;
+ 140   3            CardCode[1] = (code_temp>>8)&0xFF;
+ 141   3            CardCode[2] = (code_temp)&0xFF;
+ 142   3            CardCode[3] = 0;
+ 143   3            CardGetOk = true;
+ 144   3          }
+ 145   2          
+ 146   2          WG_ok = false;
+ 147   2        }
+ 148   1        
+ 149   1      }
+ 150          
+ 151          void WgReset(void)
+ 152          {
+ 153   1        WG_code = 0;
+ 154   1        WG_bitcnt = 0;
+ 155   1        WG_ok = false;
+ 156   1        WgTimeOut = 0;
+ 157   1      }
+ 158          
+ 159          void WgWdg(void)
+ 160          {
+ 161   1        if(WgTimeOut)
+ 162   1        {
+ 163   2          if(--WgTimeOut == 0)
+ 164   2          {
+ 165   3            WgReset();
+ 166   3          }
+ 167   2        }
+ 168   1      }
+ 169          
+ 170          //bool errflg = false;
+ 171          //void CheckRfidCard(void)
+ 172          //{
+ 173          //  uint8_t i,n,k;
+ 174          //  uint8_t j = 0;
+ 175          //  uint32_t num;
+ 176          //  uint8_t tmp;
+ 177          //  uint8_t chk;
+C51 COMPILER V9.57.0.0   CARDREAD                                                          08/04/2022 09:41:27 PAGE 4   
+
+ 178          //  
+ 179          //  CardInTime = 1000;
+ 180          ////  printf("==================\r\n");
+ 181          ////  for(i=0;i<4;i++)
+ 182          ////  {
+ 183          ////    printf("%04X,\r\n",CardRaw[i]);
+ 184          ////  }
+ 185          //  i=0;
+ 186          //  while(((CardRaw[0]&0x8000) == 0) && (i<16))
+ 187          //  {
+ 188          //    i++;
+ 189          //    CardRaw[0] <<= 1;
+ 190          //  }
+ 191          //  if(i == 16)
+ 192          //  {
+ 193          //    return;
+ 194          //  }
+ 195          //  n = i;
+ 196          //  for(i=0;i<3;i++)
+ 197          //  {
+ 198          //    CardRaw[i] |= CardRaw[i+1]>>(16-n);
+ 199          //    CardRaw[i+1] <<= n;
+ 200          //  }
+ 201          //    
+ 202          //  for(k=0;k<3;k++)
+ 203          //  {
+ 204          //    errflg = false;
+ 205          
+ 206          //    if((k>0) && (n > 0))
+ 207          //    {
+ 208          //      for(i=3;i>0;i--)
+ 209          //      {
+ 210          //        CardRaw[i] >>= 1;
+ 211          //        CardRaw[i] |= ((CardRaw[i-1]<<15)&0x8000);
+ 212          //      }
+ 213          //      CardRaw[0] >>= 1;
+ 214          //      n--;
+ 215          //    }
+ 216          
+ 217          //    RfidCardBuf[0] = (CardRaw[0] >> 11)&0x1F;
+ 218          //    RfidCardBuf[1] = (CardRaw[0] >> 6)&0x1F;
+ 219          //    RfidCardBuf[2] = (CardRaw[0] >> 1)&0x1F;
+ 220          //    RfidCardBuf[3] = (CardRaw[0] << 4)&0x1F;
+ 221          //    
+ 222          //    RfidCardBuf[3] |= (CardRaw[1] >> 12)&0x0F;
+ 223          //    RfidCardBuf[4] = (CardRaw[1] >> 7)&0x1F;
+ 224          //    RfidCardBuf[5] = (CardRaw[1] >> 2)&0x1F;
+ 225          //    RfidCardBuf[6] = (CardRaw[1] << 3)&0x1F;
+ 226          //    
+ 227          //    RfidCardBuf[6] |= (CardRaw[2] >> 13)&0x0F;
+ 228          //    RfidCardBuf[7] = (CardRaw[2] >> 8)&0x1F;
+ 229          //    RfidCardBuf[8] = (CardRaw[2] >> 3)&0x1F;
+ 230          //    RfidCardBuf[9] = (CardRaw[2] << 2)&0x1F;
+ 231          //    RfidCardBuf[9] |= (CardRaw[2] >> 14)&0x0F;
+ 232          
+ 233          
+ 234          //    for(i=0;i<CARD_BUF_LEN;i++)
+ 235          //    {
+ 236          //      tmp = (RfidCardBuf[i]>>1)&0x0F;
+ 237          //      for(j=0,chk = 0;j<4;j++)
+ 238          //      {
+ 239          //        if((tmp & 0x01) == 0x01)
+C51 COMPILER V9.57.0.0   CARDREAD                                                          08/04/2022 09:41:27 PAGE 5   
+
+ 240          //        {
+ 241          //          chk++;
+ 242          //        }
+ 243          //        tmp >>= 1;
+ 244          //      }
+ 245          //      //printf("%b02X,%bd\r\n",RfidCardBuf[i],chk);
+ 246          //      chk %= 2;
+ 247          //      //chk <<= 4;
+ 248          //      
+ 249          //      if((i%2) == 0)
+ 250          //      {
+ 251          //        CardCode[i/2] = (RfidCardBuf[i]<<3)&0xF0;
+ 252          //      }
+ 253          //      else
+ 254          //      {
+ 255          //        CardCode[i/2] |= (RfidCardBuf[i]>>1)&0x0F;
+ 256          //      }
+ 257          //        
+ 258          //      if(((RfidCardBuf[i]&0x01) != chk) && (i<6))//((i/2) < (CARD_BUF_LEN/2-1)))
+ 259          //      {
+ 260          //        errflg = true;
+ 261          //        break;
+ 262          //      }   
+ 263          //    }
+ 264          //    if(!errflg)
+ 265          //    {
+ 266          //      num = CardCode[0];
+ 267          //      num <<= 8;
+ 268          //      num |= CardCode[1];
+ 269          //      num <<= 8;
+ 270          //      num |= CardCode[2];
+ 271          //      num <<= 8;
+ 272          //      num |= CardCode[3];
+ 273          //      
+ 274          //      if((CodeOld == num) && (num != 0) && (num != 0xFFFFFFFF))
+ 275          //      {
+ 276          //        if(++CodeCheckTs == 1)
+ 277          //        {
+ 278          //          CodeCheckTs = 1;
+ 279          //          CardGetOk = true;//(CodeIn!=CodeOld);
+ 280          //          CodeIn = CodeOld;
+ 281          //          printf("CardNo:%lu\r\n",(num>>8));
+ 282          //          printf("CardRead:");
+ 283          //          for(i=0;i<j;i++)
+ 284          //          {
+ 285          //            printf("%b02X",CardCode[i]);
+ 286          //          }
+ 287          //          printf("\r\n");
+ 288          //          return;
+ 289          //        }
+ 290          //      }
+ 291          //      else
+ 292          //      {
+ 293          //        CodeOld = num;
+ 294          //        CodeCheckTs = 0;
+ 295          //      }
+ 296          //      return;
+ 297          //    }
+ 298          //  }
+ 299          //}
+ 300          
+ 301          //#define CARD_TL_MIN 17
+C51 COMPILER V9.57.0.0   CARDREAD                                                          08/04/2022 09:41:27 PAGE 6   
+
+ 302          //#define CARD_TL_MAX 35
+ 303          //#define CARD_TH_MIN 40
+ 304          //#define CARD_TH_MAX 65
+ 305          //#define CARD_LEN 16
+ 306          //void CardIrq(void)
+ 307          //{
+ 308          //  
+ 309          //  if(CardReadOK)
+ 310          //  {
+ 311          //    return;
+ 312          //  }
+ 313          
+ 314          //  if((CardRt >= CARD_TL_MIN) && (CardRt <= CARD_TL_MAX))
+ 315          //  {
+ 316          //    CardGetBit++;
+ 317          //    if(((CardGetBit == 1) && (RFID_DAT == 0))
+ 318          //      || ((CardGetBit == 2) && (RFID_DAT == 1)))
+ 319          //    {
+ 320          //      CardGetBit = 0;
+ 321          //      CardBitCount = 0;
+ 322          //      return;
+ 323          //    }
+ 324          
+ 325          //    if((CardGetBit > CARD_LEN) && (CardGetBit%2) == 1)//位跳变
+ 326          //    {
+ 327          //      CardCh <<= 1;
+ 328          //      if(RFID_DAT == 0)//上升沿为1
+ 329          //      {
+ 330          //        CardCh |= 0x01;
+ 331          //      }
+ 332          //      if(++CardBitCount == 16)
+ 333          //      {
+ 334          //        CardBitCount = 0;
+ 335          //        CardRaw[CardChCount++] = CardCh;
+ 336          //        if(CardChCount >= 5)
+ 337          //        {
+ 338          //          CardReadOK = true;
+ 339          //        }
+ 340          //      }
+ 341          //    }
+ 342          //  }
+ 343          //  else if((CardRt >= CARD_TH_MIN) && (CardRt <= CARD_TH_MAX))
+ 344          //  { 
+ 345          //    if(CardGetBit <= CARD_LEN)//未接收到完整起始位
+ 346          //    {
+ 347          //      CardGetBit = 0;
+ 348          //      CardBitCount = 0;
+ 349          //      return;
+ 350          //    }
+ 351          //    
+ 352          //    CardGetBit+=2;
+ 353          //    if((CardGetBit%2) == 1)//位跳变
+ 354          //    {
+ 355          //      CardCh <<= 1;
+ 356          //      if(RFID_DAT == 0)//上升沿为1
+ 357          //      {
+ 358          //        CardCh |= 0x01;
+ 359          //      }
+ 360          //      if(++CardBitCount == 16)
+ 361          //      {
+ 362          //        CardBitCount = 0;
+ 363          //        CardRaw[CardChCount++] = CardCh;
+C51 COMPILER V9.57.0.0   CARDREAD                                                          08/04/2022 09:41:27 PAGE 7   
+
+ 364          //        if(CardChCount >= 5)
+ 365          //        {
+ 366          //          CardReadOK = true;
+ 367          //        }
+ 368          //      }
+ 369          //    }
+ 370          //  }
+ 371          //  else//位错误
+ 372          //  {
+ 373          //    CardGetBit = 0;
+ 374          //    CardBitCount = 0;
+ 375          //  }
+ 376          //}
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    835    ----
+   CONSTANT SIZE    =     16    ----
+   XDATA SIZE       =     90      15
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      4    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

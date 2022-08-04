@@ -1,0 +1,466 @@
+C51 COMPILER V9.57.0.0   SYSSTRING                                                         08/04/2022 09:22:01 PAGE 1   
+
+
+C51 COMPILER V9.57.0.0, COMPILATION OF MODULE SYSSTRING
+OBJECT MODULE PLACED IN .\Objects\SysString.obj
+COMPILER INVOKED BY: D:\keil-c51\C51\BIN\C51.EXE UserSrc\SysString.c LARGE OPTIMIZE(8,SPEED) BROWSE NOINTPROMOTE INCDIR(
+                    -.\UserSrc;.\StcLib;.\UserSrc\ENG) DEBUG OBJECTEXTEND PRINT(.\Listings\SysString.lst) TABS(2) OBJECT(.\Objects\SysString.
+                    -obj)
+
+line level    source
+
+   1          #include "SysString.h"
+   2          #include "Lcd12864.h"
+   3          #include "stdio.h"
+   4          #include "GSM.h"
+   5          #include "Audio.h"
+   6          #include "SysStatus.h"
+   7          
+   8          //code uint8_t FhChar[]={"0\"/:()'_- "};
+   9          code uint8_t FhChar[]={"-\"/:()'_"};
+  10          
+  11          #ifdef LANGUAGE_EN
+  12          code char StrTabSysSet[] = {"System settings"};
+  13          code char StrTabSysSet1[] = {"1-13"};
+  14          
+  15          code char StrTabNameSet1[] = {"1-Add/Edit user"};
+  16          code char StrTabNameSet2[] = {"2-Delete user"};
+  17          code char StrTabNameSet3[] = {"3-DeleteAllusers"};
+  18          code char StrTabDelAllName[] = {"Delete all      Users?"};
+  19          code char StrTabRoom[] = {"Apartment:"};
+  20          code char StrTabName[] = {"Name:"};
+  21          code char StrTabTel[] = {"Tel"};
+  22          code char StrTabMakeSure[] = {" Confirm Save ?"};
+  23          code char StrTabSaveOK[] = {"Save!"};
+  24          code char StrTabErr[] = {"Error!"};
+  25          
+  26          code char StrTabDel[] = {"Confirm         Deletion?"};
+  27          code char StrTabDelOK[] = {"   Deleted !"};
+  28          code char StrTabDelAllPsw[] = {"Delete all      Passwords?"};
+  29          code char StrTabPswSet1[] = {"1-Add a Password"};
+  30          code char StrTabPswSet2[] = {"2-DeletePassword"};
+  31          code char StrTabPswSet3[] = {"3-Delete all "};
+  32          code char StrTabPsw1[] = {"Password:"};
+  33          code char StrTabPsw3[] = {"Confirm"};
+  34          code char StrTabPsw2[] = {"Password:"};
+  35          
+  36          code char StrTabListCount[] = {"Total:"};
+  37          code char StrTabSysPsw[] = {"Admin password:"};
+  38          
+  39          code char StrTabCardSet1[] = {"1-Add a card"};
+  40          code char StrTabCardSet2[] = {"2-Delete card"};
+  41          code char StrTabCardSet3[] = {"3-DeleteAllcards"};
+  42          code char StrTabDelAllCard[] = {"Delete all      cards?"};
+  43          code char StrTabCard[] = {"Card:"};
+  44          code char StrTabCardErr[] = {"Card Error!"};
+  45          code char StrTabUnlock[] = {"The door is open!"};
+  46          
+  47          code char StrTabCall[] = {"Calling: "};
+  48          
+  49          code char StrTabTalkTime[] = {"Talk time:"};
+  50          //code char StrTabRingTime[] = {"RingTime:"};
+  51          code char StrTabRingTime[] = {"Call panel:"};
+  52          code char StrTabCallTime[] = {"Ring time:"};
+  53          code char StrTabTone[] = {"Voice           Instructions:"};
+C51 COMPILER V9.57.0.0   SYSSTRING                                                         08/04/2022 09:22:01 PAGE 2   
+
+  54          code char StrTabCamrea[] = {"Camera:"};
+  55          code char StrTabRelay[] = {"Relay time:"};
+  56          
+  57          code char StrTabOn[] = {"On"};
+  58          code char StrTabOff[] = {"Off"};
+  59          
+  60          code char StrTabGsmErr[] = {"  Gsm Error!"};
+  61          //code char StrTabGsmCsq[] = {"Csq:"};
+  62          //code char StrTabGsmCsqErr[] = {"No Signal"};
+  63          code char StrTabSimCardReady[] = {"Active SIM"};
+  64          code char StrTabNotSimCard[] = {"SIM not exist"};
+  65          code char StrTabSimCardBusy[] = {"Inactive SIM"};
+  66          code char StrTabGsmCsqErr[] = {"No Signal"};
+  67          code char StrTabGsmCsqLow[] = {"Low signal"};
+  68          code char StrTabGsmCsqMed[] = {"Medium signal"};
+  69          code char StrTabGsmCsqGood[] = {"High signal"};
+  70          
+  71          code char StrTabMain1[] = {"To cancel press"};
+  72          code char StrTabMain2[] = {"select a name"};
+  73          code char StrTabMain3[] = {"from the list"};
+  74          code char StrTabMain4[] = {"press"};
+  75          
+  76          code char StrTabMain5[] = {"Welcome!"};
+  77          code char StrTabMain6[] = {"To call -"};
+  78          code char StrTabMain7[] = {"Enter apartment"};
+  79          code char StrTabMain8[] = {"number + "};
+  80          
+  81          code char StrTabMain9[] = {"To call,press"};
+  82          code char StrTabMain10[] = {"To unlock,press"};
+  83          code char StrTabMain11[] = {"+ 4 Digits code"};
+  84          code char StrTabRoomErr[] = {"Apartment Error!"};
+  85          code char StrTabTalk[] = {"Talking:"};
+  86          
+  87          code char StrTabReset[] = {"Reset OK!"};
+  88          code char StrTabUnlockKey[] = {"CMD Door        Open 1:"};
+  89          code char StrTabUnlockKey2[]= {"CMD Door        Open 2:"};
+  90          
+  91          code char StrTabTalkValum[] = {"Speech volume:"};
+  92          code char StrTabNum[] = {"Room: "};
+  93          code char StrTabSms[] = {"Sms"};
+  94          
+  95          #endif
+  96          
+  97          #ifdef LANGUAGE_HB
+              code char StrTabSysSet[] = {"הגדרת מערכת"};
+              code char StrTabSysSet1[] = {"1-13"};
+              
+              code char StrTabNameSet1[] = {"1-הוסף/ערוך שם"};
+              code char StrTabNameSet2[] = {"2-מחק שם"};
+              code char StrTabNameSet3[] = {"3- מחק הכל"};
+              code char StrTabDelAllName[] = {"האם למחוק הכל ?"};
+              code char StrTabRoom[] = {"דירה: "};
+              code char StrTabNum[] = {"תא: "};
+              code char StrTabName[] = {"שם:"};
+              code char StrTabTel[] = {"טל"};//{"טלפון"};
+              code char StrTabMakeSure[] = {" לאשר שמירה?"};
+              code char StrTabSaveOK[] = {"   שמור!"};
+              code char StrTabErr[] = {"  שגיאה!"};
+              
+              code char StrTabDel[] = {"לאשר מחיקה ?"};
+              code char StrTabDelOK[] = {"  נמחק!"};
+              code char StrTabDelAllPsw[] = {"האם למחוק הכל ?"};
+C51 COMPILER V9.57.0.0   SYSSTRING                                                         08/04/2022 09:22:01 PAGE 3   
+
+              code char StrTabPswSet1[] = {"1- הוסף סיסמה"};
+              code char StrTabPswSet2[] = {"2-מחק סיסמה"};
+              code char StrTabPswSet3[] = {"3-מחק הכל"};
+              code char StrTabPsw1[] = {"סיסמה:"};
+              code char StrTabPsw2[] = {"אשר:"};
+              
+              code char StrTabListCount[] = {"סך הכל:"};
+              code char StrTabSysPsw[] = {"סיסמת מנהל"};
+              
+              code char StrTabCardSet1[] = {"1-הוסף כרטיס"};
+              code char StrTabCardSet2[] = {"2-מחיקת כרטיס"};
+              code char StrTabCardSet3[] = {"3-מחק הכל"};
+              code char StrTabDelAllCard[] = {"האם למחוק הכל ?"};
+              code char StrTabCard[] = {"כרטיס:"};
+              code char StrTabCardErr[] = {"  שגיאת כרטיס!"};
+              code char StrTabUnlock[] = {"  דלת נפתחת!"};
+              code char StrTabTalkValum[] = {"עוצמת דיבור"};
+              
+              code char StrTabCall[] = {"מצלצל:"};
+              
+              code char StrTabTalkTime[] = {"זמן דיבור:"};
+              //code char StrTabRingTime[] = {"זמן צלצול:"};
+              code char StrTabRingTime[] = {"התקשרות לפנל:"};
+              code char StrTabCallTime[] = {"זמן צלצול:"};//{"זמן שיחה:"};
+              code char StrTabTone[] = {"הנחיות קוליות:"};
+              code char StrTabCamrea[] = {"מצלמה:"};
+              code char StrTabRelay[] = {"זמן ממסר:"};
+              code char StrTabUnlockKey[] = {"מקש פ.דלת 1:"};
+              code char StrTabUnlockKey2[] = {"מקש פ.דלת 2:"};
+              
+              code char StrTabOn[] = {"פעיל"};
+              code char StrTabOff[] = {"כבוי"};
+              
+              code char StrTabGsmErr[] = {"שגיאת כרטיס סים!"};
+              //code char StrTabGsmCsq[] = {"Csq:"};
+              //code char StrTabGsmCsqErr[] = {"אין קליטה"};
+              code char StrTabSimCardReady[] = {"סים פעיל"};
+              code char StrTabNotSimCard[] = {"סים לא קיים"};
+              code char StrTabSimCardBusy[] = {"סים תפוס"};
+              code char StrTabGsmCsqErr[] = {"אין קליטה"};
+              code char StrTabGsmCsqLow[] = {"קליטה נמוכה"};
+              code char StrTabGsmCsqMed[] = {"קליטה בינונית"};
+              code char StrTabGsmCsqGood[] = {"קליטה טובה"};
+              
+              code char StrTabMainA1[] = {"ברוכים הבאים!"};
+              code char StrTabMainA2[] = {"לצלצול לדירה"};
+              code char StrTabMainA3[] = {"לחצו מספר דירה"};
+              code char StrTabMainA4[] = {"לביטול לחצו"};
+              
+              code char StrTabMain1[] = {"לרשימת שמות"};
+              code char StrTabMain2[] = {" לבחירת שם לחצו"};
+              code char StrTabMain3[] = {"לכניסה עם קוד"};
+              code char StrTabMain4[] = {"לחצו   וקוד"};
+              
+              code char StrTabRoomErr[] = {" שגיאה בדירה!"};
+              code char StrTabTalk[] = {"שיחה:"};
+              
+              code char StrTabReset[] = {"Reset OK!"};
+              
+              code char StrTabSms[] = {"Sms"};
+              
+              #endif
+C51 COMPILER V9.57.0.0   SYSSTRING                                                         08/04/2022 09:22:01 PAGE 4   
+
+ 178          //code char StrTabGsmCsqErr[] = {"אבגדהוזחטיךכלםמןנסעףפץצקרשת"};
+ 179          //code char StrTabMain1[] = {"אבגדהוזחטיךכלםמן"};
+ 180          //code char StrTabMain2[] = {"נסעףפץצקרשת"};
+ 181          
+ 182          char DisBuf[20];
+ 183          
+ 184          void ShowConfirmSave(void)
+ 185          {
+ 186   1        LcdClear();
+ 187   1        DisplayString(1,0,StrTabMakeSure);
+ 188   1      }
+ 189          void ShowConfirmDel(void)
+ 190          {
+ 191   1        LcdClear();
+ 192   1        DisplayString(1,0,StrTabDel);
+ 193   1      }
+ 194          void ShowSaveOK(void)
+ 195          {
+ 196   1        LcdClear();
+ 197   1        DisplayString(1,0,StrTabSaveOK);
+ 198   1        MP3_StartPlay(MP3_SetOK);
+ 199   1      }
+ 200          void ShowErr(void)
+ 201          {
+ 202   1        LcdClear();
+ 203   1        DisplayString(1,0,StrTabErr);
+ 204   1        MP3_StartPlay(MP3_Failed);
+ 205   1      }
+ 206          void ShowDeleteOK(void)
+ 207          {
+ 208   1        LcdClear();
+ 209   1        DisplayString(1,0,StrTabDelOK);
+ 210   1        MP3_StartPlay(MP3_SetOK);
+ 211   1      }
+ 212          
+ 213          void ShowCardErr(void)
+ 214          {
+ 215   1        LcdClear();
+ 216   1        DisplayString(1,0,StrTabCardErr);
+ 217   1        MP3_StartPlay(MP3_CardErr);
+ 218   1      }
+ 219          void ShowUnlock(bool Sound)
+ 220          {
+ 221   1        LcdClear();
+ 222   1        DisplayString(1,0,StrTabUnlock);
+ 223   1        if(Sound)
+ 224   1        {
+ 225   2          MP3_StartPlay(MP3_Unlock);
+ 226   2        }
+ 227   1      }
+ 228          
+ 229          void ShowGsmErr(void)
+ 230          {
+ 231   1        LcdClear();
+ 232   1        DisplayString(1,0,StrTabGsmErr);
+ 233   1        MP3_StartPlay(MP3_Noresponse);
+ 234   1      }
+ 235          
+ 236          void ShowRoomErr(void)
+ 237          {
+ 238   1        LcdClear();
+ 239   1        DisplayString(1,0,StrTabRoomErr);
+C51 COMPILER V9.57.0.0   SYSSTRING                                                         08/04/2022 09:22:01 PAGE 5   
+
+ 240   1        
+ 241   1      }
+ 242          
+ 243          void ShowGsmCsq(void)
+ 244          {
+ 245   1        if(SysStatus != SYS_IDLE)
+ 246   1        {
+ 247   2          return;
+ 248   2        }
+ 249   1        DisplayString(3,0,"                ");
+ 250   1        if((GsmCsq == 0xFE))
+ 251   1        {
+ 252   2          DisplayString(3,0,StrTabNotSimCard);
+ 253   2          return;
+ 254   2        }
+ 255   1        else if((GsmCsq == 0xFD))
+ 256   1        {
+ 257   2          DisplayString(3,0,StrTabSimCardBusy);
+ 258   2          return;
+ 259   2        }
+ 260   1        else if((GsmCsq == 0xFC))
+ 261   1        {
+ 262   2          DisplayString(3,0,StrTabSimCardReady);
+ 263   2          return;
+ 264   2        }
+ 265   1        else if((GsmCsq == 0xff) || (GsmCsq < 5))
+ 266   1        {
+ 267   2          DisplayString(3,0,StrTabGsmCsqErr);
+ 268   2          //DisplayCsq(0,0,0);
+ 269   2          //DisplayIco(0,1,6);
+ 270   2          return;
+ 271   2        }
+ 272   1      //  DisplayCsq(0,0,GsmCsq);
+ 273   1        
+ 274   1        if(GsmCsq < 18)
+ 275   1        {
+ 276   2          DisplayString(3,0,StrTabGsmCsqLow);
+ 277   2        }
+ 278   1        else if(GsmCsq < 25)
+ 279   1        {
+ 280   2          DisplayString(3,0,StrTabGsmCsqMed);
+ 281   2        }
+ 282   1        else
+ 283   1        {
+ 284   2          DisplayString(3,0,StrTabGsmCsqGood);
+ 285   2        }
+ 286   1      //  sprintf(DisBuf,"%s%bd",StrTabGsmCsq,GsmCsq);
+ 287   1      //  DisplayString(0,0,DisBuf);
+ 288   1        
+ 289   1      //  DisplayIco(0,0,0);
+ 290   1      //  DisplayIco(0,1,1);
+ 291   1      //  DisplayIco(0,2,2);
+ 292   1      //  DisplayIco(0,3,3);
+ 293   1      //  DisplayIco(0,4,4);
+ 294   1      //  DisplayIco(0,5,5);
+ 295   1      //  DisplayIco(0,6,6);
+ 296   1        
+ 297   1      }
+ 298          
+ 299          void ShowMain(uint8_t first)
+ 300          {
+ 301   1        //if((first != 0) && (first != 3) && (first != 5) && (first != 8))
+C51 COMPILER V9.57.0.0   SYSSTRING                                                         08/04/2022 09:22:01 PAGE 6   
+
+ 302   1      //  if((first != 0) && (first != 5))
+ 303   1      //  {
+ 304   1      //    return;
+ 305   1      //  }
+ 306   1        LcdClear();
+ 307   1      #ifdef LANGUAGE_HB  
+              //  if((first == 3) || (first == 8))
+              //  {
+              //    ShowGsmCsq();
+              //    return;
+              //  }
+                if(first == 0)
+                {
+                  DisplayString(0,0,StrTabMainA1);
+                  DisplayString(1,0,StrTabMainA2);
+                  DisplayString(2,0,StrTabMainA3);
+                  DisplayIco(2,0,2);
+                  DisplayString(3,0,StrTabMainA4);
+                  DisplayIco(3,1,8);
+                }
+                else// if(first == 5)
+                {
+                  
+                  DisplayString(0,0,StrTabMain1);
+                  DisplayIco(0,3,0);
+                  DisplayIco(0,4,1);
+                  
+                  DisplayString(1,0,StrTabMain2);
+                  DisplayIco(1,0,2);
+                  
+                  DisplayString(2,0,StrTabMain3);
+                  
+              //    DisplayString(3,0,StrTabMain4);
+              //    DisplayIco(3,10,3);
+                  
+                  ShowGsmCsq();
+                }
+              
+              //#ifdef LANGUAGE_EN  
+              //  if((first == 3) || (first == 8))
+              //  {
+              //    ShowGsmCsq();
+              //    return;
+              //  }
+              //  LcdClear();
+              //  DisplayString(0,6,StrTabMain1);
+              //  DisplayIco(0,3,0);
+              //  DisplayIco(0,4,1);
+              //  
+              //  DisplayString(1,1,StrTabMain2);
+              //  DisplayIco(1,2,2);
+              //  
+              //  
+              //  DisplayString(2,0,StrTabMain3);
+              //  DisplayIco(2,5,2);
+              //  
+              //  DisplayString(3,3,StrTabMain4);
+              //  DisplayIco(3,1,3);
+              #else LANGUAGE_EN
+ 361   1        if(first == 0)
+ 362   1        {
+ 363   2          DisplayString(0,0,StrTabMain5);
+C51 COMPILER V9.57.0.0   SYSSTRING                                                         08/04/2022 09:22:01 PAGE 7   
+
+ 364   2          //DisplayIco(0,7,4);
+ 365   2          
+ 366   2          DisplayString(1,0,StrTabMain6);
+ 367   2          
+ 368   2          DisplayString(2,0,StrTabMain7);
+ 369   2          
+ 370   2          DisplayString(3,0,StrTabMain8);
+ 371   2          DisplayIco(3,9,2); //铃铛
+ 372   2      //    DisplayIco(3,7,0);
+ 373   2      //    DisplayIco(3,8,1); //上下键
+ 374   2        }
+ 375   1      
+ 376   1        else if(first == 1)
+ 377   1        {
+ 378   2          DisplayString(0,0,StrTabMain1);
+ 379   2          DisplayIco(0,15,4);
+ 380   2        //  DisplayIco(0,3,1);
+ 381   2          
+ 382   2          DisplayString(1,0,StrTabMain2);
+ 383   2        //  DisplayIco(1,2,2);
+ 384   2          
+ 385   2          
+ 386   2          DisplayString(2,0,StrTabMain3);
+ 387   2          //DisplayIco(2,5,2); //
+ 388   2          
+ 389   2          DisplayString(3,0,StrTabMain4);
+ 390   2          DisplayIco(3,6,0);
+ 391   2          DisplayIco(3,8,1); //上下键
+ 392   2          //DisplayIco(3,12,2); //铃铛
+ 393   2        }
+ 394   1      
+ 395   1        else if(first == 2)
+ 396   1        {
+ 397   2          DisplayString(0,0,StrTabMain9);
+ 398   2          DisplayIco(0,14,2); //铃铛
+ 399   2          
+ 400   2          DisplayString(1,0,StrTabMain10);
+ 401   2          DisplayIco(1,15,3); //钥匙
+ 402   2          
+ 403   2          DisplayString(2,0,StrTabMain11);
+ 404   2          
+ 405   2          ShowGsmCsq();
+ 406   2        }
+ 407   1        
+ 408   1      #endif
+ 409   1      }
+ 410          
+ 411          void ShowTalkTime(void)
+ 412          {
+ 413   1        LcdClear();
+ 414   1      #ifdef LANGUAGE_HB
+                DisplayString(1,0,StrTabTalk);
+                sprintf(DisBuf,"%u",TalkTime);
+                DisplayString(1,8,DisBuf);
+              #else
+ 419   1        sprintf(DisBuf,"%s%u",StrTabTalk,TalkTime);
+ 420   1        DisplayString(1,0,DisBuf);
+ 421   1      #endif
+ 422   1      }
+ 423          void ShowReset(void)
+ 424          {
+ 425   1        LcdClear();
+C51 COMPILER V9.57.0.0   SYSSTRING                                                         08/04/2022 09:22:01 PAGE 8   
+
+ 426   1        DisplayString(1,0,StrTabReset);
+ 427   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    615    ----
+   CONSTANT SIZE    =    890    ----
+   XDATA SIZE       =     20       1
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----       1
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,638 @@
+C51 COMPILER V9.57.0.0   CARD                                                              08/04/2022 09:22:01 PAGE 1   
+
+
+C51 COMPILER V9.57.0.0, COMPILATION OF MODULE CARD
+OBJECT MODULE PLACED IN .\Objects\Card.obj
+COMPILER INVOKED BY: D:\keil-c51\C51\BIN\C51.EXE UserSrc\Card.c LARGE OPTIMIZE(8,SPEED) BROWSE NOINTPROMOTE INCDIR(.\Use
+                    -rSrc;.\StcLib;.\UserSrc\ENG) DEBUG OBJECTEXTEND PRINT(.\Listings\Card.lst) TABS(2) OBJECT(.\Objects\Card.obj)
+
+line level    source
+
+   1          #include "Card.h"
+   2          #include "Driver.h"
+   3          #include "Eeprom.h"
+   4          #include "SysString.h"
+   5          #include "stdio.h"
+   6          #include "Lcd12864.h"
+   7          #include "SysStatus.h"
+   8          #include "NameList.h"
+   9          #include "RfidCard.h"
+  10          
+  11          void SaveCardCount(void)
+  12          {
+  13   1        writeBuf_at24c02(USER_PARA_ADDR+((uint16_t)((uint32_t)(&UsrPara.CardCount)-(uint32_t)(&UsrPara))), (uint8
+             -_t *)&UsrPara.CardCount,sizeof(UsrPara.CardCount));
+  14   1      }
+  15          
+  16          void ClearCard(void)
+  17          {
+  18   1        UsrPara.CardCount = 0;
+  19   1        SaveCardCount();
+  20   1      }
+  21          
+  22          void InitCard(void)
+  23          {
+  24   1        if(UsrPara.CardCount > CARD_COUNT)
+  25   1        {
+  26   2          ClearCard();
+  27   2        }
+  28   1      }
+  29          
+  30          void WriteCardByIdx(uint16_t idx,CardItemType *pItem)
+  31          {
+  32   1        uint16_t addr = (uint16_t)idx;
+  33   1        addr *= sizeof(CardItemType);
+  34   1        writeBuf_at24c02(USER_CARD_ADDR+addr, (uint8_t *)pItem,sizeof(CardItemType));
+  35   1      }
+  36          
+  37          void ReadCardByIdx(uint16_t idx,CardItemType *pItem)
+  38          {
+  39   1        uint16_t addr = (uint16_t)idx;
+  40   1        addr *= sizeof(CardItemType);
+  41   1        readBuf_at24c02(USER_CARD_ADDR+addr, (uint8_t *)pItem,sizeof(CardItemType));
+  42   1      }
+  43          
+  44          //uint16_t GetCardByRoom(uint16_t room,CardItemType *pItem)
+  45          //{
+  46          //  uint16_t idx = 0xFFFF;
+  47          //  idx = GetIdxByRoom(room,CARD_LIST);
+  48          //  if(idx != 0xFFFF)
+  49          //  {
+  50          //    ReadCardByIdx(idx,pItem);
+  51          //    return idx;
+  52          //  }
+  53          //  return 0xFFFF;
+C51 COMPILER V9.57.0.0   CARD                                                              08/04/2022 09:22:01 PAGE 2   
+
+  54          //}
+  55          
+  56          uint16_t CheckCard(uint8_t *card)
+  57          {
+  58   1        CardItemType tmpItem;
+  59   1        uint16_t idx = 0;
+  60   1        uint8_t i;
+  61   1        if(UsrPara.CardCount == 0)
+  62   1        {
+  63   2          return 0xFFFF;
+  64   2        }
+  65   1        while(idx < UsrPara.CardCount)
+  66   1        {
+  67   2          ReadCardByIdx(idx,&tmpItem);
+  68   2          for(i=0;i<RFID_CARD_LEN;i++)
+  69   2          {
+  70   3            if(tmpItem.Card[i] != card[i])
+  71   3            {
+  72   4              break;
+  73   4            }
+  74   3          }
+  75   2          if(i == RFID_CARD_LEN)
+  76   2          {
+  77   3            printf("CheckCard:%bd\r\n",idx);
+  78   3            return idx;
+  79   3          }
+  80   2          idx++;
+  81   2        }
+  82   1        return 0xFFFF;
+  83   1      }
+  84          
+  85          uint16_t AddCardItem(CardItemType *pItem)
+  86          {
+  87   1        CardItemType tmpItem;
+  88   1        uint16_t idx = 0;
+  89   1        uint8_t i;
+  90   1        while(idx < UsrPara.CardCount)
+  91   1        {
+  92   2          ReadCardByIdx(idx,&tmpItem);
+  93   2          
+  94   2          if(tmpItem.Room == pItem->Room)
+  95   2          {
+  96   3            for(i=0;i<RFID_CARD_LEN;i++)
+  97   3            {
+  98   4              if(tmpItem.Card[i] != pItem->Card[i])
+  99   4              {
+ 100   5                break;
+ 101   5              }
+ 102   4            }
+ 103   3            if(i == RFID_CARD_LEN)
+ 104   3            {
+ 105   4              return idx;
+ 106   4            }
+ 107   3          }
+ 108   2          idx++;
+ 109   2        }
+ 110   1        if(UsrPara.CardCount < CARD_COUNT)
+ 111   1        {
+ 112   2          WriteCardByIdx(UsrPara.CardCount,pItem);
+ 113   2          UsrPara.CardCount++;
+ 114   2          SaveCardCount();
+ 115   2          return UsrPara.CardCount-1;
+C51 COMPILER V9.57.0.0   CARD                                                              08/04/2022 09:22:01 PAGE 3   
+
+ 116   2        }
+ 117   1        return 0xFFFF;
+ 118   1      }
+ 119          
+ 120          void DelCardByIdx(uint16_t idx)
+ 121          {
+ 122   1        CardItemType tmpItem;
+ 123   1        if(idx < UsrPara.CardCount)
+ 124   1        {
+ 125   2          if(idx == (UsrPara.CardCount-1))
+ 126   2          {
+ 127   3            UsrPara.CardCount--;
+ 128   3            SaveCardCount();
+ 129   3          }
+ 130   2          else
+ 131   2          {
+ 132   3            UsrPara.CardCount--;
+ 133   3            SaveCardCount();
+ 134   3            ReadCardByIdx(UsrPara.CardCount,&tmpItem);
+ 135   3            WriteCardByIdx(idx,&tmpItem);
+ 136   3          }
+ 137   2        }
+ 138   1      }
+ 139          
+ 140          void DelCardByRoom(uint16_t room)
+ 141          {
+ 142   1        uint16_t idx = GetIdxByRoom(room,CARD_LIST);
+ 143   1        while(idx != 0xFFFF)
+ 144   1        {
+ 145   2          DelCardByIdx(idx);
+ 146   2          idx = GetIdxByRoom(room,CARD_LIST);
+ 147   2        }
+ 148   1      }
+ 149          
+ 150          void DelCardByCard(uint8_t *card)
+ 151          {
+ 152   1        uint16_t idx = CheckCard(card);
+ 153   1        while(idx != 0xFFFF)
+ 154   1        {
+ 155   2          DelCardByIdx(idx);
+ 156   2          idx = CheckCard(card);
+ 157   2        }
+ 158   1      }
+ 159          
+ 160          
+ 161          CardItemType CardEditItem;
+ 162          static uint8_t CardEditMidx = 0;
+ 163          static uint8_t CardEditIdx = 0;
+ 164          
+ 165          void ShowCard(CardItemType *pItem,bool edit)
+ 166          {
+ 167   1      //  uint8_t i;
+ 168   1        uint32_t num;
+ 169   1        char Disbuf[60];
+ 170   1        LcdClear();
+ 171   1      //  if(pItem->Room > 0)
+ 172   1      //  {
+ 173   1      //    sprintf(Disbuf,"%s%4d",StrTabNum,pItem->Room);
+ 174   1      //    DisplayString(1,0,Disbuf);
+ 175   1      //    if(CardEditMidx == 0)
+ 176   1      //    {
+ 177   1      //    #ifdef LANGUAGE_HB  
+C51 COMPILER V9.57.0.0   CARD                                                              08/04/2022 09:22:01 PAGE 4   
+
+ 178   1      //      SetFlash(1,7);
+ 179   1      //    #else
+ 180   1      //      SetFlash(1,strlen(StrTabNum));
+ 181   1      //    #endif
+ 182   1      //    }
+ 183   1      //  }
+ 184   1      //  else
+ 185   1      //  {
+ 186   1      //    DisplayString(1,0,StrTabNum);
+ 187   1      //    if(CardEditMidx == 0)
+ 188   1      //    {
+ 189   1      //    #ifdef LANGUAGE_HB  
+ 190   1      //      SetFlash(1,7);
+ 191   1      //    #else
+ 192   1      //      SetFlash(1,strlen(StrTabNum));
+ 193   1      //    #endif
+ 194   1      //    }
+ 195   1      //  }
+ 196   1        #ifdef LANGUAGE_HB
+                if(pItem->Room > 0)
+                {
+                //  sprintf(Disbuf,"%s%u",StrTabNum,pItem->Room); 
+                  DisplayString(1,0,StrTabNum);
+                  sprintf(Disbuf,"%u",pItem->Room);
+                  DisplayString(1,(16-HBstrlen(StrTabNum)-strlen(Disbuf)),Disbuf);
+                }
+                else
+                {
+                  //sprintf(Disbuf,"%s%",StrTabNum);
+                  DisplayString(1,0,StrTabNum);
+                } 
+                #else
+ 210   1        if(pItem->Room > 0)
+ 211   1        {
+ 212   2          sprintf(Disbuf,"%s%u",StrTabNum,pItem->Room); 
+ 213   2        }
+ 214   1        else
+ 215   1        {
+ 216   2          sprintf(Disbuf,"%s%",StrTabNum);
+ 217   2        }
+ 218   1        DisplayString(1,0,Disbuf);
+ 219   1        #endif
+ 220   1        
+ 221   1        if(CardEditMidx == 0)
+ 222   1        {
+ 223   2        #ifdef LANGUAGE_HB  
+                  SetFlash(1,15-HBstrlen(StrTabNum));
+                #else
+ 226   2          SetFlash(1,strlen((uint8_t *)Disbuf));
+ 227   2        #endif
+ 228   2        }
+ 229   1        if(edit)
+ 230   1        {
+ 231   2          //sprintf(Disbuf,"%s",StrTabCard);
+ 232   2          DisplayString(2,0,StrTabCard);
+ 233   2          if(!MemIsEmpty(pItem->Card,RFID_CARD_LEN))
+ 234   2          {
+ 235   3      //      for(i=0;i<RFID_CARD_LEN;i++)
+ 236   3      //      {
+ 237   3      //        sprintf(Disbuf,"%s%b02X",Disbuf,pItem->Card[i]);
+ 238   3      //      }
+ 239   3            num = pItem->Card[0];
+C51 COMPILER V9.57.0.0   CARD                                                              08/04/2022 09:22:01 PAGE 5   
+
+ 240   3            num <<= 8;
+ 241   3            num |= pItem->Card[1];
+ 242   3            num <<= 8;
+ 243   3            num |= pItem->Card[2];
+ 244   3            num <<= 8;
+ 245   3            num |= pItem->Card[3];
+ 246   3            sprintf(Disbuf,"%lu",num>>8);
+ 247   3            DisplayString(2,(16-HBstrlen(StrTabCard)-strlen(Disbuf)),Disbuf);
+ 248   3          #ifdef LANGUAGE_HB  
+                    sprintf(Disbuf,"%lu",num>>8);
+                    DisplayString(2,(16-HBstrlen(StrTabCard)-strlen(Disbuf)),Disbuf);
+                  #else 
+ 252   3            sprintf(Disbuf,"%s %lu",StrTabCard,num>>8);
+ 253   3            DisplayString(2,0,Disbuf);
+ 254   3          #endif
+ 255   3          }
+ 256   2          //DisplayString(2,0,Disbuf);
+ 257   2        }
+ 258   1      }
+ 259          
+ 260          void EditCardCon(void)
+ 261          {
+ 262   1        ClearBuf((uint8_t *)&CardEditItem,sizeof(CardItemType));
+ 263   1        CardEditMidx = 0;
+ 264   1        CardEditIdx = 0;
+ 265   1        SysStatus = SYS_EDIT_CARD;
+ 266   1        ShowCard(&CardEditItem,true);
+ 267   1      }
+ 268          
+ 269          void CardEditKey(uint8_t key)
+ 270          {
+ 271   1        uint16_t tmp;
+ 272   1        static bool Saved = false;
+ 273   1        if(key == KEY_SURE)
+ 274   1        {
+ 275   2          if(CardEditMidx == 1)
+ 276   2          {
+ 277   3            if(Saved)
+ 278   3            {
+ 279   4              ClearBuf((uint8_t *)&CardEditItem,sizeof(CardEditItem));
+ 280   4              CardEditIdx = 0;
+ 281   4            }
+ 282   3            else
+ 283   3            {
+ 284   4              if((CardEditItem.Room > 0)
+ 285   4                && (!MemIsEmpty(CardEditItem.Card,RFID_CARD_LEN)))
+ 286   4              {
+ 287   5                if(AddCardItem(&CardEditItem) != 0xFFFF)
+ 288   5                {
+ 289   6                  ShowSaveOK();
+ 290   6                }
+ 291   5                else
+ 292   5                {
+ 293   6                  ShowErr();
+ 294   6                }
+ 295   5                ClearBuf((uint8_t *)&CardEditItem,sizeof(CardEditItem));
+ 296   5                Saved = true;
+ 297   5              }
+ 298   4              else
+ 299   4              {
+ 300   5                ShowErr();
+ 301   5              }
+C51 COMPILER V9.57.0.0   CARD                                                              08/04/2022 09:22:01 PAGE 6   
+
+ 302   4              return;
+ 303   4            }
+ 304   3          }
+ 305   2          CardEditMidx++;
+ 306   2          CardEditMidx %= 2;
+ 307   2          CardEditIdx = 0;
+ 308   2          switch(CardEditMidx)
+ 309   2          {
+ 310   3            case 0:
+ 311   3              CardEditIdx = 0;
+ 312   3              tmp = CardEditItem.Room;
+ 313   3              while(tmp > 0)
+ 314   3              {
+ 315   4                CardEditIdx++;
+ 316   4                tmp /= 10;
+ 317   4              }
+ 318   3              break;
+ 319   3            case 1:
+ 320   3      //        ClearBuf((uint8_t *)&CardEditItem.Card,sizeof(CardEditItem.Card));
+ 321   3      //        CardEditIdx = 0;
+ 322   3      //        break;
+ 323   3      //      case 2:
+ 324   3              ShowConfirmSave();
+ 325   3              Saved = false;
+ 326   3              return;
+ 327   3          }
+ 328   2        }
+ 329   1        else if(key == KEY_DEL)
+ 330   1        {
+ 331   2          switch(CardEditMidx)
+ 332   2          {
+ 333   3            case 0:
+ 334   3              if(CardEditIdx > 0)
+ 335   3              {
+ 336   4                CardEditIdx--;
+ 337   4                CardEditItem.Room /= 10;
+ 338   4              }
+ 339   3              else
+ 340   3              {
+ 341   4                CardSetCon();
+ 342   4                return;
+ 343   4              }
+ 344   3              break;
+ 345   3      //      case 1:
+ 346   3      //        if(CardEditIdx > 0)
+ 347   3      //        {
+ 348   3      //          CardEditIdx--;
+ 349   3      //          CardEditItem.Card[CardEditIdx] = 0;
+ 350   3      //        }
+ 351   3      //        else
+ 352   3      //        {
+ 353   3      //          CardEditMidx = 0;
+ 354   3      //          CardEditIdx = 0;
+ 355   3      //          tmp = CardEditItem.Room;
+ 356   3      //          while(tmp > 0)
+ 357   3      //          {
+ 358   3      //            CardEditIdx++;
+ 359   3      //            tmp /= 10;
+ 360   3      //          }
+ 361   3      //        }
+ 362   3      //        break;
+ 363   3            case 1:
+C51 COMPILER V9.57.0.0   CARD                                                              08/04/2022 09:22:01 PAGE 7   
+
+ 364   3              CardEditMidx = 0;
+ 365   3              CardEditIdx = 0;
+ 366   3              tmp = CardEditItem.Room;
+ 367   3              while(tmp > 0)
+ 368   3              {
+ 369   4                CardEditIdx++;
+ 370   4                tmp /= 10;
+ 371   4              }
+ 372   3              break;
+ 373   3          }
+ 374   2        }
+ 375   1        else if(key == KEY_BELL)
+ 376   1        {
+ 377   2          CardSetCon();
+ 378   2          return;
+ 379   2        }
+ 380   1      
+ 381   1        if((key >= 0) && (key <= 9))
+ 382   1        {
+ 383   2          switch(CardEditMidx)
+ 384   2          {
+ 385   3            case 0:
+ 386   3              if(CardEditIdx < 4)
+ 387   3              {
+ 388   4                CardEditItem.Room *= 10;
+ 389   4                CardEditItem.Room += key;
+ 390   4                CardEditIdx++;
+ 391   4                if(CardEditItem.Room == 0)
+ 392   4                {
+ 393   5                  CardEditIdx = 0;
+ 394   5                }
+ 395   4              }
+ 396   3              break;
+ 397   3      //      case 1:
+ 398   3      //        if(CardEditIdx < CARD_LEN)
+ 399   3      //        {
+ 400   3      //          CardEditItem.Card[CardEditIdx++] = key+'0';
+ 401   3      //        }
+ 402   3      //        break;
+ 403   3          }
+ 404   2        }
+ 405   1        ShowCard(&CardEditItem,true);
+ 406   1      }
+ 407          
+ 408          void CardEditCardIn(uint8_t *card)
+ 409          {
+ 410   1      //  uint8_t i;
+ 411   1      //  ClearBuf((uint8_t *)&CardEditItem.Card,sizeof(CardEditItem.Card));
+ 412   1      //  for(i=0;i<RFID_CARD_LEN;i++)
+ 413   1      //  {
+ 414   1      //    sprintf(CardEditItem.Card,"%s%b02X",CardEditItem.Card,card[i]);
+ 415   1      //  }
+ 416   1      //  CardEditMidx = 1;
+ 417   1      //  CardEditIdx = strlen(CardEditItem.Card);
+ 418   1        HS_memcpy(CardEditItem.Card,card,RFID_CARD_LEN);
+ 419   1        ShowCard(&CardEditItem,true);
+ 420   1      }
+ 421          
+ 422          void DeleteCardCon(void)
+ 423          {
+ 424   1        ClearBuf((uint8_t *)&CardEditItem,sizeof(PswEditType));
+ 425   1        CardEditMidx = 0;
+C51 COMPILER V9.57.0.0   CARD                                                              08/04/2022 09:22:01 PAGE 8   
+
+ 426   1        CardEditIdx = 0;
+ 427   1        SysStatus = SYS_DEL_CARD;
+ 428   1        ShowCard(&CardEditItem,!MemIsEmpty(CardEditItem.Card,RFID_CARD_LEN));
+ 429   1      }
+ 430          
+ 431          void CardDeleteKey(uint8_t key)
+ 432          {
+ 433   1        uint16_t tmp;
+ 434   1        static bool Saved = false;
+ 435   1        if(key == KEY_SURE)
+ 436   1        {
+ 437   2          if(CardEditMidx == 1)
+ 438   2          {
+ 439   3            if(Saved)
+ 440   3            {
+ 441   4              ClearBuf((uint8_t *)&CardEditItem,sizeof(CardEditItem));
+ 442   4              CardEditIdx = 0;
+ 443   4            }
+ 444   3            else
+ 445   3            {
+ 446   4              if(!MemIsEmpty(CardEditItem.Card,RFID_CARD_LEN))
+ 447   4              {
+ 448   5                DelCardByCard(CardEditItem.Card);
+ 449   5                ClearBuf((uint8_t *)&CardEditItem,sizeof(CardEditItem));
+ 450   5                Saved = true;
+ 451   5                ShowDeleteOK();
+ 452   5              }
+ 453   4              else if(CardEditItem.Room > 0)
+ 454   4              {
+ 455   5                DelCardByRoom(CardEditItem.Room);
+ 456   5                ClearBuf((uint8_t *)&CardEditItem,sizeof(CardEditItem));
+ 457   5                Saved = true;
+ 458   5                ShowDeleteOK();
+ 459   5              }
+ 460   4              return;
+ 461   4            }
+ 462   3          }
+ 463   2          CardEditMidx++;
+ 464   2          CardEditMidx %= 2;
+ 465   2          CardEditIdx = 0;
+ 466   2          switch(CardEditMidx)
+ 467   2          {
+ 468   3            case 0:
+ 469   3              CardEditIdx = 0;
+ 470   3              tmp = CardEditItem.Room;
+ 471   3              while(tmp > 0)
+ 472   3              {
+ 473   4                CardEditIdx++;
+ 474   4                tmp /= 10;
+ 475   4              }
+ 476   3              break;
+ 477   3            case 1:
+ 478   3              ShowConfirmDel();
+ 479   3              Saved = false;
+ 480   3              return;
+ 481   3          }
+ 482   2        }
+ 483   1        else if(key == KEY_DEL)
+ 484   1        {
+ 485   2          switch(CardEditMidx)
+ 486   2          {
+ 487   3            case 0:
+C51 COMPILER V9.57.0.0   CARD                                                              08/04/2022 09:22:01 PAGE 9   
+
+ 488   3              if(CardEditIdx > 0)
+ 489   3              {
+ 490   4                CardEditIdx--;
+ 491   4                CardEditItem.Room /= 10;
+ 492   4              }
+ 493   3              else
+ 494   3              {
+ 495   4                CardSetCon();
+ 496   4                return;
+ 497   4              }
+ 498   3              break;
+ 499   3            case 1:
+ 500   3              CardEditMidx = 0;
+ 501   3              CardEditIdx = 0;
+ 502   3              tmp = CardEditItem.Room;
+ 503   3              while(tmp > 0)
+ 504   3              {
+ 505   4                CardEditIdx++;
+ 506   4                tmp /= 10;
+ 507   4              }
+ 508   3              break;
+ 509   3          }
+ 510   2        }
+ 511   1        else if(key == KEY_BELL)
+ 512   1        {
+ 513   2          CardSetCon();
+ 514   2          return;
+ 515   2        }
+ 516   1      
+ 517   1        if((key >= 0) && (key <= 9))
+ 518   1        {
+ 519   2          switch(CardEditMidx)
+ 520   2          {
+ 521   3            case 0:
+ 522   3              if(CardEditIdx < 4)
+ 523   3              {
+ 524   4                CardEditItem.Room *= 10;
+ 525   4                CardEditItem.Room += key;
+ 526   4                CardEditIdx++;
+ 527   4              }
+ 528   3              if(CardEditItem.Room == 0)
+ 529   3              {
+ 530   4                CardEditIdx = 0;
+ 531   4              }
+ 532   3              break;
+ 533   3          }
+ 534   2        }
+ 535   1        ShowCard(&CardEditItem,!MemIsEmpty(CardEditItem.Card,RFID_CARD_LEN));
+ 536   1      }
+ 537          
+ 538          void DeleteAllCardCon(void)
+ 539          {
+ 540   1        SysStatus = SYS_DEL_ALLCARD;
+ 541   1        LcdClear();
+ 542   1        DisplayString(1,0,StrTabDelAllCard);
+ 543   1      }
+ 544          void CardDelAllKey(uint8_t key)
+ 545          {
+ 546   1        switch(key)
+ 547   1        {
+ 548   2          case KEY_SURE:
+ 549   2            ClearCard();
+C51 COMPILER V9.57.0.0   CARD                                                              08/04/2022 09:22:01 PAGE 10  
+
+ 550   2            ShowDeleteOK();
+ 551   2            break;
+ 552   2          case KEY_BELL:
+ 553   2          case KEY_DEL:
+ 554   2            CardSetCon();
+ 555   2            break;
+ 556   2        }
+ 557   1      }
+ 558          
+ 559          void CardSetCon(void)
+ 560          {
+ 561   1        uint8_t Disbuf[10];
+ 562   1        
+ 563   1        SysStatus = SYS_SET_CARD; 
+ 564   1        LcdClear();
+ 565   1        DisplayString(0,0,StrTabCardSet1);
+ 566   1        DisplayString(1,0,StrTabCardSet2);
+ 567   1        DisplayString(2,0,StrTabCardSet3);
+ 568   1        DisplayString(3,0,StrTabListCount);
+ 569   1        sprintf(Disbuf,"%u",UsrPara.CardCount);
+ 570   1        #ifdef LANGUAGE_HB  
+                DisplayString(3,15-HBstrlen(StrTabListCount)-strlen(Disbuf),Disbuf);
+                #else 
+ 573   1        DisplayString(3,6,Disbuf);
+ 574   1        #endif
+ 575   1      }
+ 576          
+ 577          void CardSetKey(uint8_t key)
+ 578          {
+ 579   1        switch(key)
+ 580   1        {
+ 581   2          case 1:
+ 582   2            EditCardCon();
+ 583   2            break;
+ 584   2          case 2:
+ 585   2            DeleteCardCon();
+ 586   2            break;
+ 587   2          case 3:
+ 588   2            DeleteAllCardCon();
+ 589   2            break;
+ 590   2          case KEY_DEL:
+ 591   2          case KEY_BELL:
+ 592   2            SysSettingCon();
+ 593   2            break;
+ 594   2        }
+ 595   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   2582    ----
+   CONSTANT SIZE    =     39    ----
+   XDATA SIZE       =      8     127
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      2       1
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

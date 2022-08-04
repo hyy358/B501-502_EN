@@ -1,0 +1,237 @@
+C51 COMPILER V9.57.0.0   MAIN                                                              08/04/2022 09:22:01 PAGE 1   
+
+
+C51 COMPILER V9.57.0.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: D:\keil-c51\C51\BIN\C51.EXE UserSrc\main.c LARGE OPTIMIZE(8,SPEED) BROWSE NOINTPROMOTE INCDIR(.\Use
+                    -rSrc;.\StcLib;.\UserSrc\ENG) DEBUG OBJECTEXTEND PRINT(.\Listings\main.lst) TABS(2) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          #include "Driver.h"
+   2          #include "stdio.h"
+   3          #include "UART.h"
+   4          #include "timer.h"
+   5          #include "Lcd12864.h"
+   6          #include "GSM.h"
+   7          #include "NameList.h"
+   8          #include "SysStatus.h"
+   9          #include "Eeprom.h"
+  10          #include "RfidCard.h"
+  11          #include "SysString.h"
+  12          #include "Audio.h"
+  13          
+  14          uint16_t MainTime = 0;
+  15          uint8_t UsrKey = 0;
+  16          //extern GsmStatusType GsmStatus;
+  17          //SysStatusType SysStatusOld;
+  18          void main(void)
+  19          {
+  20   1        delay(100);
+  21   1        EA = 0;
+  22   1        while(K_RESET == 0);
+  23   1        GPIO_config();
+  24   1        Timer_config();
+  25   1        UART_config();
+  26   1        Exti_config();
+  27   1      #ifdef PWM_AUDIO
+  28   1        SPI_config();
+  29   1        PWM_config();
+  30   1      #endif
+  31   1        delay(1000);
+  32   1        Init_12864();
+  33   1        EA = 1;
+  34   1        delay(100);
+  35   1        InitSysPara(false);
+  36   1        InitUserPara();
+  37   1        delay(100); 
+  38   1        GSM_StartInit();
+  39   1        CardReadInit();
+  40   1        SysIdleCon();
+  41   1        //MP3_StartPlay(MP3_Speak);
+  42   1        //WdtConfig();
+  43   1        //printf("EEPROM_ADDR_END,%d\r\n",EEPROM_ADDR_END);
+  44   1        //RevNamelist("C:2;R:1001;N:HuangSheng;T1:18859119836;T2:123;T3:456;R:1002;N:wang;T1:17750651602;T2:;T3:;
+             -");
+  45   1        while(1)
+  46   1        {
+  47   2          if(COM1.B_RX_OK)
+  48   2          {
+  49   3          //  printf("%s\r\n",RX1_Buffer);
+  50   3            RevNamelist(RX1_Buffer);
+  51   3            Uart1Clear();
+  52   3          }
+  53   2          if(COM3.B_RX_OK)
+C51 COMPILER V9.57.0.0   MAIN                                                              08/04/2022 09:22:01 PAGE 2   
+
+  54   2          {
+  55   3            printf("%s",RX3_Buffer);
+  56   3            GsmUARTCmd(RX3_Buffer,COM3.RX_Cnt);
+  57   3            Uart3Clear();
+  58   3          }
+  59   2      #ifdef MP3_MODULE   
+                  if(COM4.B_RX_OK)
+                  {
+                    Mp3UartRx(RX4_Buffer);
+                    Uart4Clear();
+                  }
+              #endif  
+  66   2      #ifdef PWM_AUDIO
+  67   2          WavReadTask();
+  68   2      #endif    
+  69   2          if(DtmfData)
+  70   2          {
+  71   3            printf("DtmfData: 0x%b02X\r\n",DtmfData);
+  72   3            if(DtmfData == SysPara.UnlockKey)
+  73   3            {
+  74   4              Unlock(0,SysPara.RealyTime,true);
+  75   4            }
+  76   3            if(DtmfData == SysPara.UnlockKey2)
+  77   3            {
+  78   4              Unlock(1,SysPara.RealyTime,true);
+  79   4            }
+  80   3            DtmfData = 0;
+  81   3          }
+  82   2          if(Timer0_Irq)
+  83   2          {
+  84   3            Timer0_Irq = false;
+  85   3            
+  86   3            UartTask();
+  87   3            UsrKey = KeyScan();
+  88   3            if(UsrKey!=0xFF)
+  89   3            {
+  90   4              //BeepOne();
+  91   4            #ifdef KEY_BEEP
+  92   4              Beep_StartPlay(MP3_Key);
+  93   4            #else
+                      MP3_StartPlay(MP3_Key);
+                    #endif
+  96   4              printf("UsrKey %bd\r\n",UsrKey);
+  97   4              SysKey(UsrKey);
+  98   4            }
+  99   3            SkeyScan();
+ 100   3            
+ 101   3            CardMsTask();
+ 102   3            GSM_InitTask();
+ 103   3            FlashTask();
+ 104   3          #ifdef WG_CARD
+                    WgWdg();
+                  #endif
+ 107   3            if(++MainTime > 1000)
+ 108   3            {
+ 109   4              MainTime = 0;
+ 110   4              SYS_LED = ~SYS_LED;
+ 111   4              RelayTask();
+ 112   4              if(IdleTime && (CallOutTime == 0) && (TalkTime == 0))
+ 113   4              {
+ 114   5                if(--IdleTime == 0)
+ 115   5                {
+C51 COMPILER V9.57.0.0   MAIN                                                              08/04/2022 09:22:01 PAGE 3   
+
+ 116   6                  SysIdleCon();
+ 117   6                }
+ 118   5              }
+ 119   4              if(SysStatus == SYS_TALK)
+ 120   4              {
+ 121   5                ShowTalkTime();
+ 122   5                
+ 123   5                //printf("TalkTime: %d\r\n",TalkTime);
+ 124   5                if(TalkTime && (TalkTime == SysPara.TalkTime))
+ 125   5                {
+ 126   6                  MP3_StartPlay(MP3_Speak);
+ 127   6                }
+ 128   5                if(TalkTime && (--TalkTime == 0))
+ 129   5                {
+ 130   6                  GSM_Huangup();
+ 131   6                  MP3_StartPlay(MP3_Huangup);
+ 132   6                  SysIdleCon();
+ 133   6                }
+ 134   5              }
+ 135   4            #ifdef LANGUAGE_HB
+                      MainShow++;
+                      MainShow %= 10; 
+                      if((IdleTime == 0) && (SysStatus == SYS_IDLE) && (NameListIdx == 0xFFFF))
+                      {
+                        ShowMain(MainShow);
+                      }
+                    #else
+ 143   4              MainShow++;
+ 144   4              MainShow %= 15; 
+ 145   4              if((SysStatus == SYS_IDLE) && (IdleTime == 0) && (NameListIdx == 0xFFFF) && ((MainShow == 0) || (MainS
+             -how == 5) ||(MainShow == 10)))
+ 146   4              {
+ 147   5                ShowMain((MainShow==10)?1:((MainShow==5)?0:2)); 
+ 148   5              }
+ 149   4            #endif
+ 150   4              
+ 151   4      //        if(PaOpenTime)
+ 152   4      //        {
+ 153   4      //          if(--PaOpenTime == 0)
+ 154   4      //          {
+ 155   4      //            PA_PWR_L;
+ 156   4      //          }
+ 157   4      //        }
+ 158   4            }
+ 159   3            
+ 160   3            if((EditTime > 0) && (SysStatus == SYS_EDIT_NAME))
+ 161   3            {
+ 162   4              EditTime--;
+ 163   4              if(EditTime == 0)
+ 164   4              {
+ 165   5                NameEditKey(KEY_TIMEOUT);
+ 166   5              }
+ 167   4            }   
+ 168   3          }
+ 169   2          
+ 170   2          if((GsmCsqFlag) && (SysStatus == SYS_IDLE))
+ 171   2          { 
+ 172   3      //      if(SysStatus == SYS_IDLE)
+ 173   3      //      {
+ 174   3      //        ShowGsmCsq();
+ 175   3      //      }
+ 176   3            GsmCsqFlag = false;
+C51 COMPILER V9.57.0.0   MAIN                                                              08/04/2022 09:22:01 PAGE 4   
+
+ 177   3          }
+ 178   2          if(CardReadOK)
+ 179   2          {
+ 180   3            CheckRfidCard();
+ 181   3            if(CardGetOk)
+ 182   3            {
+ 183   4            #ifdef KEY_BEEP
+ 184   4              Beep_StartPlay(MP3_Key);
+ 185   4            #else
+                      MP3_StartPlay(MP3_Key);
+                    #endif
+ 188   4              SysCard(CardCode);
+ 189   4            }
+ 190   3            CardReadInit();
+ 191   3          }
+ 192   2      #ifdef WG_CARD
+                  if(WgReadOK)
+                  {
+                  #ifdef KEY_BEEP
+                    Beep_StartPlay(MP3_Key);
+                  #else
+                    MP3_StartPlay(MP3_Key);
+                  #endif
+                    SysCard(CardCode);
+                    WgReset();
+                  }
+              #endif
+ 204   2        }
+ 205   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    617    ----
+   CONSTANT SIZE    =     36    ----
+   XDATA SIZE       =      3    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

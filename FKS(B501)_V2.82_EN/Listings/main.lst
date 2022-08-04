@@ -1,0 +1,235 @@
+C51 COMPILER V9.57.0.0   MAIN                                                              08/04/2022 09:41:27 PAGE 1   
+
+
+C51 COMPILER V9.57.0.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Objects\main.obj
+COMPILER INVOKED BY: D:\keil-c51\C51\BIN\C51.EXE UserSrc\main.c LARGE OPTIMIZE(8,SPEED) BROWSE NOINTPROMOTE INCDIR(.\Use
+                    -rSrc;.\StcLib;.\UserSrc\ENG) DEBUG OBJECTEXTEND PRINT(.\Listings\main.lst) TABS(2) OBJECT(.\Objects\main.obj)
+
+line level    source
+
+   1          #include "Driver.h"
+   2          #include "stdio.h"
+   3          #include "UART.h"
+   4          #include "timer.h"
+   5          #include "Lcd12864.h"
+   6          #include "NameList.h"
+   7          #include "SysStatus.h"
+   8          #include "Eeprom.h"
+   9          #include "RfidCard.h"
+  10          #include "SysString.h"
+  11          #include "Audio.h"
+  12          #include "WDT.h"
+  13          
+  14          int MainTime = 0;
+  15          u8 MainShow = 0;
+  16          volatile int Key;
+  17          //SysStatusType SysStatusOld;
+  18          
+  19          void main(void)
+  20          {
+  21   1        delay(100);
+  22   1        EA = 0;
+  23   1        while(K_RESET == 0);
+  24   1        GPIO_config();
+  25   1        Timer_config();
+  26   1        UART_config();
+  27   1        Exti_config();
+  28   1      #ifdef PWM_AUDIO
+  29   1        SPI_config();
+  30   1        PWM_config();
+  31   1      #endif
+  32   1      #ifdef PWM_BEEP
+                PWM_config();
+              #endif
+  35   1        delay(1000);
+  36   1        Init_12864();
+  37   1        EA = 1;
+  38   1        delay(100);
+  39   1        InitSysPara(false);
+  40   1        InitUserPara();
+  41   1        delay(100);
+  42   1        WDT_config();
+  43   1        SysIdleCon();
+  44   1        //MP3_StartPlay(MP3_Speak);
+  45   1        CardReadInit();
+  46   1      #ifdef PWM_BEEP
+              //#if 1 //(defined(PWM_BEEP) || defined(KEY_BEEP))
+                MP3_StartPlay(MP3_SetOK);
+              #endif  
+  50   1      #ifdef KEY_BEEP
+  51   1        Beep_StartPlay(MP3_SetOK);
+  52   1      #else
+                MP3_StartPlay(MP3_SetOK);
+              #endif
+C51 COMPILER V9.57.0.0   MAIN                                                              08/04/2022 09:41:27 PAGE 2   
+
+  55   1        while(1)
+  56   1        {
+  57   2      //    SysCard(CardCode);
+  58   2          if(COM1.B_RX_OK)
+  59   2          {
+  60   3          //  printf("%s\r\n",RX1_Buffer);
+  61   3            RevNamelist(RX1_Buffer);
+  62   3            Uart1Clear();
+  63   3          }
+  64   2      #ifdef UART3
+  65   2          if(COM3.B_RX_OK)
+  66   2          {
+  67   3            printf("%s",RX3_Buffer);
+  68   3            
+  69   3            Uart3Clear();
+  70   3          }
+  71   2      #endif
+  72   2      #ifdef MP3_MODULE
+                  if(COM4.B_RX_OK)
+                  {
+                    Mp3UartRx(RX4_Buffer);
+                    Uart4Clear();
+                  }
+              #endif  
+  79   2      #ifdef PWM_AUDIO    
+  80   2          WavReadTask();
+  81   2      #endif
+  82   2      //    if(DtmfData)
+  83   2      //    {
+  84   2      //      printf("DtmfData: 0x%b02X\r\n",DtmfData);
+  85   2      //      if(DtmfData == SysPara.UnlockKey)
+  86   2      //      {
+  87   2      //        Unlock();
+  88   2      //      }
+  89   2      //      DtmfData = 0;
+  90   2      //    }
+  91   2          if(Timer0_Irq)
+  92   2          {
+  93   3            Timer0_Irq = false;
+  94   3            
+  95   3            UartTask();
+  96   3            FlashTask();
+  97   3            WgWdg();
+  98   3            if(++MainTime > 1000)
+  99   3            {
+ 100   4              MainTime = 0;
+ 101   4              WDT_Clear();
+ 102   4              SYS_LED = ~SYS_LED;
+ 103   4              RelayTask();
+ 104   4              if(IdleTime)
+ 105   4              {
+ 106   5                if(--IdleTime == 0)
+ 107   5                {
+ 108   6                  SysIdleCon();
+ 109   6                }
+ 110   5              }
+ 111   4              if(SysStatus == SYS_TALK)
+ 112   4              {
+ 113   5                if(--CallOutTime == 0)
+ 114   5                {
+ 115   6                  SysIdleCon();
+ 116   6                }
+C51 COMPILER V9.57.0.0   MAIN                                                              08/04/2022 09:41:27 PAGE 3   
+
+ 117   5                else if(UnlockTime == 0)
+ 118   5                {
+ 119   6                  ShowTalkTime();
+ 120   6                }
+ 121   5              }
+ 122   4              if(SysStatus == SYS_CALL)
+ 123   4              {
+ 124   5                if(--CallOutTime == 0)
+ 125   5                {
+ 126   6      //            SysStatus = SYS_TALK;
+ 127   6      //            CallOutTime = SysPara.TalkTime;
+ 128   6      //            ShowTalkTime();
+ 129   6                  SysIdleCon();
+ 130   6                }
+ 131   5              }
+ 132   4            #ifdef LANGUAGE_EN
+ 133   4              MainShow++;
+ 134   4              MainShow %= 15; 
+ 135   4              if((SysStatus == SYS_IDLE) && (IdleTime == 0) && (NameListIdx == 0xFFFF) && ((MainShow == 0) || (MainS
+             -how == 5) ||(MainShow == 10)))
+ 136   4              {
+ 137   5                ShowMain((MainShow==0)?1:((MainShow==5)?0:2));  
+ 138   5              }
+ 139   4            #endif
+ 140   4            }
+ 141   3      
+ 142   3            if((EditTime > 0) && (SysStatus = SYS_EDIT_NAME))
+ 143   3            {
+ 144   4              EditTime--;
+ 145   4              if(EditTime == 0)
+ 146   4              {
+ 147   5                NameEditKey(KEY_TIMEOUT);
+ 148   5              }
+ 149   4            }
+ 150   3            Key = KeyScan();
+ 151   3            if(Key != 0xFF)
+ 152   3            {
+ 153   4              //MP3_StartPlay(MP3_InputRoom);
+ 154   4            #ifdef KEY_BEEP
+ 155   4              Beep_StartPlay(MP3_Key);
+ 156   4            #else
+                      MP3_StartPlay(MP3_Key);
+                    #endif
+ 159   4              SysKey(Key);
+ 160   4            }
+ 161   3            SkeyScan();
+ 162   3            CardMsTask();
+ 163   3          }
+ 164   2          
+ 165   2      //    if(CardReadOK)
+ 166   2      //    {
+ 167   2      //      CheckRfidCard();
+ 168   2      //      if(CardGetOk)
+ 169   2      //      {
+ 170   2      //        #ifdef KEY_BEEP
+ 171   2      //          Beep_StartPlay(MP3_Key);
+ 172   2      //        #else
+ 173   2      //          MP3_StartPlay(MP3_Key);
+ 174   2      //        #endif
+ 175   2      //        SysCard(CardCode);
+ 176   2      //      }
+ 177   2      //      CardReadInit();
+C51 COMPILER V9.57.0.0   MAIN                                                              08/04/2022 09:41:27 PAGE 4   
+
+ 178   2      //    }
+ 179   2          
+ 180   2      
+ 181   2              
+ 182   2          WG_Read26();
+ 183   2          WG_Send26();
+ 184   2          if(CardReadOK)
+ 185   2          {
+ 186   3              if(CardGetOk)
+ 187   3              {
+ 188   4              #ifdef KEY_BEEP
+ 189   4                Beep_StartPlay(MP3_Key);
+ 190   4              #else
+                        MP3_StartPlay(MP3_Key);
+                      #endif
+ 193   4                SysCard(CardCode);
+ 194   4              }
+ 195   3              CardReadInit();
+ 196   3          }
+ 197   2          
+ 198   2      //    if(SysStatusOld != SysStatus)
+ 199   2      //    {
+ 200   2      //      printf("%bd ->> %bd\r\n",SysStatusOld,SysStatus);
+ 201   2      //      SysStatusOld = SysStatus;
+ 202   2      //    }
+ 203   2        }
+ 204   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    483    ----
+   CONSTANT SIZE    =      3    ----
+   XDATA SIZE       =      5    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
